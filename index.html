@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VS Player Pro - Multitrack Playback System</title>
+    <title>VS Player Pro - MultiTracks Style</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
@@ -12,23 +14,27 @@
         }
 
         :root {
-            --bg-primary: #0a0a0f;
-            --bg-secondary: #12121a;
-            --bg-tertiary: #1a1a25;
-            --bg-hover: #252535;
-            --accent-primary: #00d4ff;
-            --accent-secondary: #ff006e;
-            --accent-warning: #ffb800;
+            --bg-primary: #0d0d0f;
+            --bg-secondary: #16161a;
+            --bg-tertiary: #1f1f24;
+            --bg-elevated: #2a2a30;
+            --bg-hover: #35353d;
+            --accent-cyan: #00d4ff;
+            --accent-pink: #ff2d78;
+            --accent-purple: #8b5cf6;
+            --accent-orange: #f97316;
+            --accent-green: #22c55e;
+            --accent-yellow: #eab308;
             --text-primary: #ffffff;
-            --text-secondary: #a0a0b0;
-            --text-muted: #606070;
-            --border-color: #2a2a3a;
-            --success: #00ff88;
-            --danger: #ff4444;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --border-color: #27272a;
+            --danger: #ef4444;
+            --success: #22c55e;
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             overflow: hidden;
@@ -36,105 +42,187 @@
             user-select: none;
         }
 
-        /* Layout Principal */
         .app-container {
             display: grid;
-            grid-template-columns: 300px 1fr 280px;
-            grid-template-rows: 60px 1fr 100px;
+            grid-template-rows: 70px 1fr 220px 80px;
             height: 100vh;
-            gap: 1px;
-            background: var(--border-color);
+            background: var(--bg-primary);
         }
 
-        /* Header */
+        /* Header Moderno */
         .header {
-            grid-column: 1 / -1;
             background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 24px;
-            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
         .logo {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo-icon {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            border-radius: 8px;
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            -webkit-text-fill-color: white;
+            font-weight: 800;
             font-size: 18px;
+            color: white;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
         }
 
-        .header-controls {
+        .logo-text {
             display: flex;
-            gap: 16px;
+            flex-direction: column;
+        }
+
+        .logo-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .header-center {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-tertiary);
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .nav-tab {
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+        }
+
+        .nav-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-tab.active {
+            background: var(--bg-elevated);
+            color: var(--accent-cyan);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
             align-items: center;
         }
 
-        .btn-header {
-            background: var(--bg-tertiary);
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
             border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 8px 16px;
-            border-radius: 6px;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
             cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
             transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--accent-cyan);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
             display: flex;
             align-items: center;
             gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.2);
         }
 
-        .btn-header:hover {
-            background: var(--bg-hover);
-            border-color: var(--accent-primary);
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(0, 212, 255, 0.3);
         }
 
-        .btn-header.active {
-            background: var(--accent-primary);
-            color: var(--bg-primary);
-            border-color: var(--accent-primary);
-        }
-
-        /* Sidebar - Setlist */
-        .sidebar-left {
-            background: var(--bg-secondary);
-            display: flex;
-            flex-direction: column;
+        /* Main Content Area */
+        .main-content {
+            display: grid;
+            grid-template-columns: 280px 1fr;
             overflow: hidden;
         }
 
-        .panel-header {
-            padding: 16px;
+        /* Setlist Sidebar */
+        .sidebar-setlist {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .setlist-header {
+            padding: 20px;
             border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-secondary);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .setlist-controls {
-            padding: 12px;
+        .setlist-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        .setlist-count {
+            font-size: 12px;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .setlist-actions {
+            padding: 12px 20px;
             display: flex;
             gap: 8px;
             border-bottom: 1px solid var(--border-color);
@@ -142,13 +230,14 @@
 
         .btn-small {
             flex: 1;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
             padding: 8px;
-            border-radius: 4px;
-            cursor: pointer;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
             font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
             transition: all 0.2s;
         }
 
@@ -160,14 +249,14 @@
         .setlist {
             flex: 1;
             overflow-y: auto;
-            padding: 8px;
+            padding: 12px;
         }
 
         .song-item {
             background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            padding: 16px;
             margin-bottom: 8px;
             cursor: pointer;
             transition: all 0.2s;
@@ -176,16 +265,14 @@
         }
 
         .song-item:hover {
-            background: var(--bg-hover);
-            border-color: var(--accent-primary);
+            background: var(--bg-elevated);
             transform: translateX(4px);
         }
 
         .song-item.active {
-            background: linear-gradient(90deg, var(--accent-primary) 0%, transparent 100%);
-            border-color: var(--accent-primary);
-            background-size: 4px 100%;
-            background-repeat: no-repeat;
+            background: linear-gradient(90deg, rgba(0, 212, 255, 0.1), transparent);
+            border-color: var(--accent-cyan);
+            border-left: 3px solid var(--accent-cyan);
         }
 
         .song-item.playing::before {
@@ -195,219 +282,163 @@
             top: 0;
             bottom: 0;
             width: 3px;
-            background: var(--success);
-            animation: pulse 1s infinite;
+            background: var(--accent-green);
+            animation: pulse-bar 1.5s infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        @keyframes pulse-bar {
+            0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--accent-green); }
+            50% { opacity: 0.6; }
+        }
+
+        .song-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
         }
 
         .song-number {
             font-size: 11px;
+            font-weight: 700;
             color: var(--text-muted);
-            margin-bottom: 4px;
+            background: var(--bg-secondary);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .song-key {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent-orange);
+            background: rgba(249, 115, 22, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
         }
 
         .song-title {
             font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 4px;
+            font-size: 15px;
+            margin-bottom: 6px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         .song-meta {
-            font-size: 12px;
-            color: var(--text-secondary);
             display: flex;
             gap: 12px;
-        }
-
-        .song-key {
-            color: var(--accent-warning);
-            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-muted);
         }
 
         .song-bpm {
-            color: var(--accent-primary);
+            color: var(--accent-cyan);
+            font-weight: 600;
         }
 
-        /* Main Content - Tracks */
-        .main-content {
-            background: var(--bg-primary);
+        /* Player Area */
+        .player-area {
             display: flex;
             flex-direction: column;
+            background: var(--bg-primary);
+        }
+
+        /* Timeline Section */
+        .timeline-section {
+            height: 200px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
             overflow: hidden;
         }
 
-        .toolbar {
-            background: var(--bg-secondary);
-            padding: 12px 24px;
+        .timeline-header {
             display: flex;
-            gap: 16px;
+            justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border-color);
+            padding: 16px 24px;
+            height: 60px;
         }
 
-        .transport {
+        .timeline-info {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .time-display {
+            font-family: 'SF Mono', monospace;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .timeline-song-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timeline-song-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .timeline-song-artist {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .timeline-controls {
             display: flex;
             gap: 12px;
-            align-items: center;
         }
 
-        .btn-transport {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            border: none;
+        .transport-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 18px;
             transition: all 0.2s;
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: 2px solid var(--border-color);
         }
 
-        .btn-transport:hover {
+        .transport-btn:hover {
+            background: var(--bg-hover);
             transform: scale(1.05);
-            border-color: var(--accent-primary);
         }
 
-        .btn-transport.play {
-            background: var(--success);
-            color: var(--bg-primary);
-            width: 64px;
-            height: 64px;
-            font-size: 28px;
+        .transport-btn.play {
+            background: var(--accent-green);
+            color: white;
+            border-color: var(--accent-green);
+            width: 56px;
+            height: 56px;
+            font-size: 24px;
+            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3);
         }
 
-        .btn-transport.stop {
+        .transport-btn.stop {
             background: var(--danger);
             color: white;
+            border-color: var(--danger);
         }
 
-        .time-display {
-            font-family: 'Courier New', monospace;
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--accent-primary);
-            min-width: 120px;
-            text-align: center;
-            letter-spacing: 2px;
-        }
-
-        .song-info-display {
-            flex: 1;
-            text-align: center;
-        }
-
-        .current-song-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .current-song-meta {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        .tempo-display {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--bg-tertiary);
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-
-        .tempo-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--accent-primary);
-        }
-
-        .tempo-label {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-
-        /* Tracks Area */
-        .tracks-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 24px;
-        }
-
-        .track {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            display: grid;
-            grid-template-columns: 200px 1fr 300px;
-            gap: 16px;
-            align-items: center;
-            transition: all 0.2s;
-        }
-
-        .track:hover {
-            border-color: var(--bg-hover);
-            background: var(--bg-tertiary);
-        }
-
-        .track.muted {
-            opacity: 0.5;
-        }
-
-        .track.solo {
-            border-color: var(--accent-warning);
-            box-shadow: 0 0 20px rgba(255, 184, 0, 0.1);
-        }
-
-        .track-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .track-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            border: 1px solid var(--border-color);
-        }
-
-        .track-details h4 {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .track-details span {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .track-waveform {
-            height: 60px;
-            background: var(--bg-primary);
-            border-radius: 8px;
+        /* Waveform Display */
+        .waveform-container {
             position: relative;
+            height: 120px;
+            margin: 0 24px;
+            background: var(--bg-primary);
+            border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--border-color);
         }
@@ -417,132 +448,351 @@
             height: 100%;
         }
 
-        .track-controls {
-            display: flex;
-            gap: 12px;
-            align-items: center;
+        .playhead {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--accent-pink);
+            left: 0%;
+            box-shadow: 0 0 10px var(--accent-pink);
+            z-index: 10;
         }
 
-        .btn-track {
-            width: 36px;
-            height: 36px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-tertiary);
+        .playhead::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: -5px;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-pink);
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(255, 45, 120, 0.5);
+        }
+
+        .section-markers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 24px;
+            display: flex;
+            padding: 0 24px;
+        }
+
+        .section-marker {
+            position: absolute;
+            top: 0;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            transform: translateX(-50%);
+        }
+
+        .section-marker::before {
+            content: '';
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            width: 2px;
+            height: 104px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Stems Pads Grid - Estilo MultiTracks */
+        .stems-section {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .stems-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .stems-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             color: var(--text-secondary);
+        }
+
+        .stems-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .stems-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 16px;
+        }
+
+        .stem-pad {
+            aspect-ratio: 1;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stem-pad:hover {
+            border-color: var(--bg-hover);
+            transform: translateY(-2px);
+        }
+
+        .stem-pad.active {
+            border-color: var(--accent-cyan);
+            background: linear-gradient(180deg, rgba(0, 212, 255, 0.1), var(--bg-secondary));
+            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.15);
+        }
+
+        .stem-pad.muted {
+            opacity: 0.4;
+            border-color: var(--border-color);
+        }
+
+        .stem-pad.solo {
+            border-color: var(--accent-yellow);
+            box-shadow: 0 0 20px rgba(234, 179, 8, 0.2);
+        }
+
+        .stem-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-            transition: all 0.2s;
+            font-size: 24px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
         }
 
-        .btn-track:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
+        .stem-pad.active .stem-icon {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: var(--accent-cyan);
         }
 
-        .btn-track.mute.active {
-            background: var(--danger);
-            color: white;
-            border-color: var(--danger);
-        }
-
-        .btn-track.solo.active {
-            background: var(--accent-warning);
-            color: var(--bg-primary);
-            border-color: var(--accent-warning);
-        }
-
-        .volume-slider {
-            flex: 1;
+        .stem-info {
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
 
-        .volume-label {
+        .stem-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .stem-status {
             font-size: 11px;
             color: var(--text-muted);
-            display: flex;
-            justify-content: space-between;
+            font-weight: 500;
         }
 
-        input[type="range"] {
-            width: 100%;
-            height: 6px;
-            background: var(--bg-primary);
-            border-radius: 3px;
-            outline: none;
-            -webkit-appearance: none;
+        .stem-pad.active .stem-status {
+            color: var(--accent-cyan);
         }
 
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            background: var(--accent-primary);
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid var(--bg-primary);
+        .stem-volume-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-cyan);
+            transform: scaleX(0.8);
+            transform-origin: left;
+            transition: transform 0.1s;
         }
 
-        input[type="range"]::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            background: var(--accent-primary);
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid var(--bg-primary);
-        }
-
-        /* Sidebar Right - Mixer */
-        .sidebar-right {
+        /* Mixer Section - Faders Verticais */
+        .mixer-section {
             background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
         }
 
-        .mixer-section {
+        .mixer-header {
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .mixer-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .mixer-channels {
+            display: flex;
+            gap: 2px;
+            padding: 20px 24px;
+            overflow-x: auto;
             flex: 1;
-            overflow-y: auto;
-            padding: 16px;
         }
 
         .mixer-channel {
-            margin-bottom: 20px;
-        }
-
-        .mixer-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .pan-slider {
-            margin-bottom: 12px;
-        }
-
-        .output-select {
-            width: 100%;
+            width: 70px;
             background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 6px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-top: 8px;
+            border-radius: 12px;
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
         }
 
-        /* Bottom Bar */
-        .bottom-bar {
-            grid-column: 1 / -1;
+        .mixer-channel:hover {
+            background: var(--bg-elevated);
+        }
+
+        .mixer-channel.active {
+            border-color: var(--accent-cyan);
+            background: linear-gradient(180deg, rgba(0, 212, 255, 0.05), var(--bg-tertiary));
+        }
+
+        .channel-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        .channel-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
             background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .fader-container {
+            flex: 1;
+            width: 40px;
+            position: relative;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 8px 0;
+        }
+
+        .fader-track {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: calc(100% - 16px);
+            background: linear-gradient(180deg, var(--accent-cyan), var(--accent-pink));
+            border-radius: 2px;
+            opacity: 0.3;
+        }
+
+        .fader-thumb {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 28px;
+            height: 16px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            cursor: ns-resize;
+            transition: transform 0.1s;
+        }
+
+        .fader-thumb:hover {
+            transform: translateX(-50%) scale(1.1);
+        }
+
+        .channel-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .channel-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .channel-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .channel-btn.mute.active {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+
+        .channel-btn.solo.active {
+            background: var(--accent-yellow);
+            color: var(--bg-primary);
+            border-color: var(--accent-yellow);
+        }
+
+        .pan-knob {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .pan-knob::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 8px;
+            background: var(--text-secondary);
+            border-radius: 1px;
+        }
+
+        /* Bottom Transport Bar */
+        .transport-bar {
+            background: var(--bg-tertiary);
             border-top: 1px solid var(--border-color);
             display: flex;
             align-items: center;
@@ -550,16 +800,56 @@
             gap: 24px;
         }
 
-        .progress-container {
+        .transport-main {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .transport-btn-large {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.2s;
+        }
+
+        .transport-btn-large:hover {
+            transform: scale(1.05);
+        }
+
+        .transport-btn-large.play {
+            background: var(--accent-green);
+            color: white;
+            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+        }
+
+        .transport-btn-large.stop {
+            background: var(--danger);
+            color: white;
+        }
+
+        .transport-btn-large.secondary {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .progress-section {
             flex: 1;
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
 
-        .progress-bar {
+        .progress-bar-container {
             height: 8px;
-            background: var(--bg-tertiary);
+            background: var(--bg-secondary);
             border-radius: 4px;
             overflow: hidden;
             cursor: pointer;
@@ -568,74 +858,62 @@
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-pink));
             width: 0%;
             transition: width 0.1s linear;
             position: relative;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
         }
 
-        .progress-handle {
-            position: absolute;
-            right: -6px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 12px;
-            height: 12px;
-            background: white;
-            border-radius: 50%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-        }
-
-        .markers {
+        .progress-time {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-muted);
+            font-weight: 500;
         }
 
-        .marker {
-            position: relative;
-            padding-top: 4px;
-        }
-
-        .marker::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 2px;
-            height: 4px;
-            background: var(--text-muted);
-        }
-
-        .next-song-preview {
+        .next-song-section {
             display: flex;
             align-items: center;
             gap: 16px;
-            padding: 0 24px;
+            padding-left: 24px;
             border-left: 1px solid var(--border-color);
-            min-width: 300px;
+            min-width: 280px;
+        }
+
+        .next-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
 
         .next-label {
             font-size: 11px;
             color: var(--text-muted);
             text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
         }
 
         .next-title {
             font-weight: 600;
-            font-size: 16px;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+
+        .next-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
         }
 
         .btn-next {
             width: 48px;
             height: 48px;
-            border-radius: 50%;
-            background: var(--accent-primary);
-            border: none;
-            color: var(--bg-primary);
+            border-radius: 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -645,8 +923,9 @@
         }
 
         .btn-next:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+            border-color: var(--accent-cyan);
         }
 
         /* Modals */
@@ -658,6 +937,7 @@
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
             z-index: 1000;
             align-items: center;
             justify-content: center;
@@ -670,12 +950,13 @@
         .modal-content {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
+            border-radius: 24px;
             padding: 32px;
             max-width: 600px;
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
         }
 
         .modal-header {
@@ -691,8 +972,20 @@
             background: none;
             border: none;
             color: var(--text-secondary);
-            font-size: 24px;
+            font-size: 28px;
             cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
         }
 
         .form-group {
@@ -702,6 +995,7 @@
         .form-label {
             display: block;
             font-size: 12px;
+            font-weight: 600;
             color: var(--text-secondary);
             margin-bottom: 8px;
             text-transform: uppercase;
@@ -713,215 +1007,103 @@
             background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.2s;
         }
 
         .form-input:focus {
             outline: none;
-            border-color: var(--accent-primary);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
         }
 
         .file-drop {
             border: 2px dashed var(--border-color);
-            border-radius: 12px;
-            padding: 40px;
+            border-radius: 16px;
+            padding: 48px;
             text-align: center;
             color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.2s;
-        }
-
-        .file-drop:hover {
-            border-color: var(--accent-primary);
             background: var(--bg-tertiary);
         }
 
-        .btn-primary {
-            background: var(--accent-primary);
-            color: var(--bg-primary);
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            font-size: 16px;
-            transition: all 0.2s;
+        .file-drop:hover {
+            border-color: var(--accent-cyan);
+            background: var(--bg-elevated);
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
-        }
-
-        /* Show Mode */
-        .show-mode {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-primary);
-            z-index: 999;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-        }
-
-        .show-mode.active {
-            display: flex;
-        }
-
-        .show-title {
-            font-size: 72px;
-            font-weight: 800;
-            margin-bottom: 24px;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-        }
-
-        .show-tempo {
-            font-size: 120px;
-            font-weight: 100;
-            color: var(--accent-primary);
-            font-family: 'Courier New', monospace;
-            margin-bottom: 40px;
-        }
-
-        .show-progress {
-            width: 80%;
-            height: 20px;
-            background: var(--bg-secondary);
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 40px;
-        }
-
-        .show-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            width: 45%;
-            transition: width 0.1s linear;
-        }
-
-        .show-controls {
-            display: flex;
-            gap: 40px;
-        }
-
-        .show-btn {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            border: 4px solid var(--border-color);
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            font-size: 48px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .show-btn:hover {
-            border-color: var(--accent-primary);
-            transform: scale(1.05);
-        }
-
-        .show-btn.play {
-            background: var(--success);
-            color: var(--bg-primary);
-            border-color: var(--success);
-            width: 160px;
-            height: 160px;
-        }
-
-        .show-btn.stop {
-            background: var(--danger);
+        .btn-save {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
             color: white;
-            border-color: var(--danger);
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
         }
 
-        .show-next {
-            position: absolute;
-            bottom: 40px;
-            right: 40px;
-            text-align: right;
-        }
-
-        .show-next-label {
-            font-size: 14px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 8px;
-        }
-
-        .show-next-title {
-            font-size: 32px;
-            font-weight: 600;
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.3);
         }
 
         /* Scrollbar */
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--bg-primary);
+            background: transparent;
         }
 
         ::-webkit-scrollbar-thumb {
-            background: var(--bg-tertiary);
-            border-radius: 4px;
+            background: var(--bg-elevated);
+            border-radius: 3px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
             background: var(--bg-hover);
         }
 
-        /* MIDI Status */
+        /* MIDI Indicator */
         .midi-status {
             display: flex;
             align-items: center;
             gap: 8px;
             font-size: 12px;
             color: var(--text-muted);
+            background: var(--bg-tertiary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
         }
 
-        .midi-indicator {
-            width: 8px;
-            height: 8px;
+        .midi-dot {
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             background: var(--text-muted);
         }
 
-        .midi-indicator.active {
-            background: var(--success);
-            box-shadow: 0 0 8px var(--success);
+        .midi-dot.active {
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
         }
 
         /* Responsive */
         @media (max-width: 1200px) {
-            .app-container {
-                grid-template-columns: 260px 1fr 240px;
+            .main-content {
+                grid-template-columns: 240px 1fr;
             }
-        }
-
-        @media (max-width: 900px) {
-            .app-container {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto;
-            }
-            .sidebar-left, .sidebar-right {
-                display: none;
+            .stems-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             }
         }
     </style>
@@ -931,153 +1113,164 @@
 <div class="app-container">
     <!-- Header -->
     <header class="header">
-        <div class="logo">
-            <div class="logo-icon">VS</div>
-            VS Player Pro
+        <div class="logo-section">
+            <div class="logo">VS</div>
+            <div class="logo-text">
+                <div class="logo-title">VS Player Pro</div>
+                <div class="logo-subtitle">Multitrack Playback</div>
+            </div>
         </div>
-        
-        <div class="header-controls">
+
+        <div class="header-center">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="app.switchTab('player')">Player</button>
+                <button class="nav-tab" onclick="app.switchTab('setlist')">Setlist</button>
+                <button class="nav-tab" onclick="app.switchTab('settings')">Settings</button>
+            </div>
+            
             <div class="midi-status">
-                <div class="midi-indicator" id="midiIndicator"></div>
+                <div class="midi-dot" id="midiDot"></div>
                 <span>MIDI</span>
             </div>
-            <button class="btn-header" onclick="app.toggleShowMode()">
-                <span>🎭</span> Modo Show
-            </button>
-            <button class="btn-header" onclick="app.openSettings()">
-                <span>⚙️</span> Config
-            </button>
-            <button class="btn-header" onclick="app.openAddSong()">
-                <span>+</span> Nova Música
+        </div>
+
+        <div class="header-actions">
+            <button class="btn-icon" onclick="app.toggleFullscreen()" title="Fullscreen">⛶</button>
+            <button class="btn-icon" onclick="app.openSettings()" title="Settings">⚙</button>
+            <button class="btn-primary" onclick="app.openAddSong()">
+                <span>+</span> Add Song
             </button>
         </div>
     </header>
 
-    <!-- Sidebar Left - Setlist -->
-    <aside class="sidebar-left">
-        <div class="panel-header">
-            Setlist
-            <span style="font-size: 12px; color: var(--text-muted);">12 músicas</span>
-        </div>
-        
-        <div class="setlist-controls">
-            <button class="btn-small" onclick="app.clearSetlist()">Limpar</button>
-            <button class="btn-small" onclick="app.saveSetlist()">Salvar</button>
-            <button class="btn-small" onclick="app.loadSetlist()">Carregar</button>
-        </div>
-
-        <div class="setlist" id="setlist">
-            <!-- Songs will be inserted here -->
-        </div>
-    </aside>
-
     <!-- Main Content -->
-    <main class="main-content">
-        <div class="toolbar">
-            <div class="transport">
-                <button class="btn-transport" onclick="app.prevSong()" title="Música Anterior">⏮</button>
-                <button class="btn-transport stop" onclick="app.stop()" title="Stop">⏹</button>
-                <button class="btn-transport play" onclick="app.togglePlay()" id="playBtn" title="Play/Pause">▶</button>
-                <button class="btn-transport" onclick="app.nextSong()" title="Próxima Música">⏭</button>
+    <div class="main-content">
+        <!-- Setlist Sidebar -->
+        <aside class="sidebar-setlist">
+            <div class="setlist-header">
+                <div class="setlist-title">Setlist</div>
+                <div class="setlist-count" id="songCount">0 songs</div>
+            </div>
+            
+            <div class="setlist-actions">
+                <button class="btn-small" onclick="app.clearSetlist()">Clear</button>
+                <button class="btn-small" onclick="app.saveSetlist()">Save</button>
+                <button class="btn-small" onclick="app.loadSetlist()">Load</button>
             </div>
 
-            <div class="time-display" id="timeDisplay">00:00</div>
-
-            <div class="song-info-display">
-                <div class="current-song-title" id="currentSongTitle">Selecione uma música</div>
-                <div class="current-song-meta" id="currentSongMeta">-- | -- | --</div>
+            <div class="setlist" id="setlist">
+                <!-- Songs inserted here -->
             </div>
+        </aside>
 
-            <div class="tempo-display">
-                <div>
-                    <div class="tempo-value" id="bpmDisplay">--</div>
-                    <div class="tempo-label">BPM</div>
+        <!-- Player Area -->
+        <div class="player-area">
+            <!-- Timeline Section -->
+            <div class="timeline-section">
+                <div class="timeline-header">
+                    <div class="timeline-info">
+                        <div class="time-display" id="timeDisplay">00:00</div>
+                        <div class="timeline-song-info">
+                            <div class="timeline-song-title" id="timelineTitle">Select a song</div>
+                            <div class="timeline-song-artist" id="timelineArtist">--</div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-controls">
+                        <button class="transport-btn" onclick="app.prevSong()">⏮</button>
+                        <button class="transport-btn stop" onclick="app.stop()">⏹</button>
+                        <button class="transport-btn play" onclick="app.togglePlay()" id="playBtn">▶</button>
+                        <button class="transport-btn" onclick="app.nextSong()">⏭</button>
+                    </div>
+                </div>
+
+                <div class="section-markers" id="sectionMarkers">
+                    <div class="section-marker" style="left: 10%">Intro</div>
+                    <div class="section-marker" style="left: 30%">Verse</div>
+                    <div class="section-marker" style="left: 50%">Chorus</div>
+                    <div class="section-marker" style="left: 70%">Bridge</div>
+                    <div class="section-marker" style="left: 90%">Outro</div>
+                </div>
+
+                <div class="waveform-container" onclick="app.seek(event)">
+                    <canvas class="waveform-canvas" id="waveformCanvas"></canvas>
+                    <div class="playhead" id="playhead"></div>
                 </div>
             </div>
 
-            <button class="btn-header" onclick="app.toggleClick()" id="clickBtn">
-                <span>🔊</span> Clique
-            </button>
+            <!-- Stems Pads Grid -->
+            <div class="stems-section">
+                <div class="stems-header">
+                    <div class="stems-title">Stems / Tracks</div>
+                    <div class="stems-actions">
+                        <button class="btn-small" onclick="app.unmuteAll()">Unmute All</button>
+                        <button class="btn-small" onclick="app.clearSolos()">Clear Solos</button>
+                    </div>
+                </div>
+                
+                <div class="stems-grid" id="stemsGrid">
+                    <!-- Stem pads inserted here -->
+                </div>
+            </div>
         </div>
+    </div>
 
-        <div class="tracks-container" id="tracksContainer">
-            <!-- Tracks will be inserted here -->
+    <!-- Mixer Section -->
+    <div class="mixer-section">
+        <div class="mixer-header">
+            <div class="mixer-title">Mixer</div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <span style="font-size: 12px; color: var(--text-muted);">Master</span>
+                <input type="range" min="0" max="100" value="85" style="width: 100px;">
+            </div>
         </div>
-    </main>
-
-    <!-- Sidebar Right - Mixer -->
-    <aside class="sidebar-right">
-        <div class="panel-header">Mixer & Routing</div>
         
-        <div class="mixer-section" id="mixerSection">
-            <!-- Mixer channels will be inserted here -->
+        <div class="mixer-channels" id="mixerChannels">
+            <!-- Mixer channels inserted here -->
         </div>
-    </aside>
+    </div>
 
-    <!-- Bottom Bar -->
-    <div class="bottom-bar">
-        <div class="progress-container">
-            <div class="progress-bar" onclick="app.seek(event)">
-                <div class="progress-fill" id="progressBar">
-                    <div class="progress-handle"></div>
-                </div>
+    <!-- Bottom Transport Bar -->
+    <div class="transport-bar">
+        <div class="transport-main">
+            <button class="transport-btn-large secondary" onclick="app.prevSong()">⏮</button>
+            <button class="transport-btn-large stop" onclick="app.stop()">⏹</button>
+            <button class="transport-btn-large play" onclick="app.togglePlay()" id="transportPlayBtn">▶</button>
+            <button class="transport-btn-large secondary" onclick="app.nextSong()">⏭</button>
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-bar-container" onclick="app.seek(event)">
+                <div class="progress-fill" id="progressBar"></div>
             </div>
-            <div class="markers">
-                <span>00:00</span>
-                <span class="marker">Intro</span>
-                <span class="marker">Verse</span>
-                <span class="marker">Chorus</span>
-                <span class="marker">Bridge</span>
+            <div class="progress-time">
+                <span id="currentTime">00:00</span>
                 <span id="totalTime">00:00</span>
             </div>
         </div>
 
-        <div class="next-song-preview">
-            <div>
-                <div class="next-label">Próxima Música</div>
-                <div class="next-title" id="nextSongTitle">--</div>
+        <div class="next-song-section">
+            <div class="next-info">
+                <div class="next-label">Next Song</div>
+                <div class="next-title" id="nextTitle">--</div>
+                <div class="next-meta" id="nextMeta">--</div>
             </div>
-            <button class="btn-next" onclick="app.nextSong()" title="Próxima">⏭</button>
+            <button class="btn-next" onclick="app.nextSong()">⏭</button>
         </div>
     </div>
-</div>
-
-<!-- Show Mode Overlay -->
-<div class="show-mode" id="showMode">
-    <div class="show-title" id="showTitle">MÚSICA</div>
-    <div class="show-tempo" id="showTempo">128</div>
-    
-    <div class="show-progress">
-        <div class="show-progress-bar" id="showProgressBar"></div>
-    </div>
-
-    <div class="show-controls">
-        <button class="show-btn stop" onclick="app.stop()">⏹</button>
-        <button class="show-btn play" onclick="app.togglePlay()" id="showPlayBtn">▶</button>
-        <button class="show-btn" onclick="app.nextSong()">⏭</button>
-    </div>
-
-    <div class="show-next">
-        <div class="show-next-label">Próxima</div>
-        <div class="show-next-title" id="showNextTitle">--</div>
-    </div>
-
-    <button class="btn-header" onclick="app.toggleShowMode()" style="position: absolute; top: 40px; right: 40px;">
-        Sair do Modo Show
-    </button>
 </div>
 
 <!-- Add Song Modal -->
 <div class="modal" id="addSongModal">
     <div class="modal-content">
         <div class="modal-header">
-            Adicionar Nova Música
+            Add New Song
             <button class="close-btn" onclick="app.closeModals()">×</button>
         </div>
         
         <div class="form-group">
-            <label class="form-label">Nome da Música</label>
-            <input type="text" class="form-input" id="songName" placeholder="Ex: Amazing Grace">
+            <label class="form-label">Song Title</label>
+            <input type="text" class="form-input" id="songName" placeholder="Enter song name">
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
@@ -1086,29 +1279,29 @@
                 <input type="number" class="form-input" id="songBpm" value="120" min="40" max="300">
             </div>
             <div class="form-group">
-                <label class="form-label">Tom</label>
-                <input type="text" class="form-input" id="songKey" placeholder="Ex: G">
+                <label class="form-label">Key</label>
+                <input type="text" class="form-input" id="songKey" placeholder="e.g. G, Dm">
             </div>
         </div>
 
         <div class="form-group">
-            <label class="form-label">Duração (segundos)</label>
+            <label class="form-label">Duration (seconds)</label>
             <input type="number" class="form-input" id="songDuration" value="240">
         </div>
 
         <div class="form-group">
-            <label class="form-label">Arquivos de Áudio (Stems)</label>
+            <label class="form-label">Audio Files (Stems)</label>
             <div class="file-drop" onclick="document.getElementById('audioFiles').click()">
                 <div style="font-size: 48px; margin-bottom: 16px;">📁</div>
-                <div>Clique ou arraste arquivos WAV/AIFF aqui</div>
-                <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
-                    drums.wav, bass.wav, pads.wav, synth.wav, click.wav, guide.wav
+                <div style="font-weight: 600; margin-bottom: 8px;">Drop stems here or click to browse</div>
+                <div style="font-size: 13px; color: var(--text-muted);">
+                    drums.wav • bass.wav • keys.wav • guitars.wav • vocals.wav • click.wav
                 </div>
             </div>
             <input type="file" id="audioFiles" multiple accept=".wav,.aiff,.mp3" style="display: none;" onchange="app.handleFiles(this.files)">
         </div>
 
-        <button class="btn-primary" onclick="app.addSong()">Adicionar ao Setlist</button>
+        <button class="btn-save" onclick="app.addSong()">Add to Setlist</button>
     </div>
 </div>
 
@@ -1116,45 +1309,46 @@
 <div class="modal" id="settingsModal">
     <div class="modal-content">
         <div class="modal-header">
-            Configurações
+            Settings
             <button class="close-btn" onclick="app.closeModals()">×</button>
         </div>
 
-        <div class="form-group">
-            <label class="form-label">Dispositivo de Saída Principal</label>
-            <select class="form-input" id="mainOutput">
-                <option value="default">Sistema Padrão</option>
-                <option value="interface1">Interface de Áudio USB (1-2)</option>
-                <option value="interface2">Interface de Áudio USB (3-4)</option>
-            </select>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group">
+                <label class="form-label">Main Output</label>
+                <select class="form-input" id="mainOutput">
+                    <option value="default">System Default</option>
+                    <option value="interface1">Audio Interface (1-2)</option>
+                    <option value="interface2">Audio Interface (3-4)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Click Output</label>
+                <select class="form-input" id="clickOutput">
+                    <option value="default">Same as Main</option>
+                    <option value="output3">Output 3</option>
+                    <option value="output4">Output 4</option>
+                </select>
+            </div>
         </div>
 
         <div class="form-group">
-            <label class="form-label">Saída do Clique</label>
-            <select class="form-input" id="clickOutput">
-                <option value="default">Mesma do Principal</option>
-                <option value="output3">Output 3</option>
-                <option value="output4">Output 4</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Controle MIDI</label>
+            <label class="form-label">MIDI Input Device</label>
             <select class="form-input" id="midiInput">
-                <option value="">Nenhum</option>
-                <option value="pedal1">Pedal USB MIDI</option>
-                <option value="keyboard1">Teclado Controlador</option>
+                <option value="">None</option>
+                <option value="pedal1">USB MIDI Pedal</option>
+                <option value="keyboard1">MIDI Keyboard</option>
             </select>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div class="form-group">
                 <label class="form-label">Buffer Size</label>
                 <select class="form-input" id="bufferSize">
                     <option value="128">128 samples (Low Latency)</option>
                     <option value="256" selected>256 samples</option>
-                    <option value="512">512 samples (Stable)</option>
-                    <option value="1024">1024 samples</option>
+                    <option value="512">512 samples</option>
                 </select>
             </div>
             <div class="form-group">
@@ -1162,26 +1356,25 @@
                 <select class="form-input" id="sampleRate">
                     <option value="44100">44.1 kHz</option>
                     <option value="48000" selected>48 kHz</option>
-                    <option value="96000">96 kHz</option>
                 </select>
             </div>
         </div>
 
         <div class="form-group">
-            <label class="form-label">
-                <input type="checkbox" id="autoAdvance" checked> 
-                Avançar automaticamente para próxima música
+            <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                <input type="checkbox" id="autoAdvance" checked style="width: 20px; height: 20px; accent-color: var(--accent-cyan);">
+                <span>Auto-advance to next song</span>
             </label>
         </div>
 
-        <button class="btn-primary" onclick="app.saveSettings()">Salvar Configurações</button>
+        <button class="btn-save" onclick="app.saveSettings()">Save Settings</button>
     </div>
 </div>
 
 <script>
 /**
- * VS Player Pro - Multitrack Playback System
- * Aplicação completa para playback de stems em ambientes ao vivo
+ * VS Player Pro - MultiTracks Style
+ * Interface profissional para playback de stems
  */
 
 class VSPlayer {
@@ -1192,154 +1385,122 @@ class VSPlayer {
         this.currentTime = 0;
         this.duration = 0;
         this.bpm = 120;
-        this.clickEnabled = true;
-        this.showMode = false;
-        this.midiAccess = null;
-        this.songs = [];
-        this.tracks = [];
-        this.outputs = [];
-        
-        // Configurações padrão
         this.settings = {
-            mainOutput: 'default',
-            clickOutput: 'default',
-            midiInput: '',
-            bufferSize: 256,
-            sampleRate: 48000,
             autoAdvance: true
+        };
+        
+        this.songs = [];
+        this.stems = [];
+        
+        // Stem types com ícones e cores
+        this.stemTypes = {
+            click: { icon: '🎵', color: '#ef4444', name: 'Click' },
+            guide: { icon: '🎤', color: '#f97316', name: 'Guide' },
+            drums: { icon: '🥁', color: '#eab308', name: 'Drums' },
+            bass: { icon: '🎸', color: '#22c55e', name: 'Bass' },
+            keys: { icon: '🎹', color: '#06b6d4', name: 'Keys' },
+            synth: { icon: '🎛️', color: '#8b5cf6', name: 'Synth' },
+            guitars: { icon: '🎸', color: '#ec4899', name: 'Guitars' },
+            vocals: { icon: '🎙️', color: '#f43f5e', name: 'Vocals' },
+            pads: { icon: '🌊', color: '#3b82f6', name: 'Pads' },
+            orchestra: { icon: '🎻', color: '#a855f7', name: 'Orchestra' }
         };
 
         this.init();
     }
 
     async init() {
-        // Inicializar Web Audio API
         try {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
-                sampleRate: this.settings.sampleRate,
-                latencyHint: 'playback'
-            });
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         } catch (e) {
-            console.error('Web Audio API não suportada:', e);
-            alert('Seu navegador não suporta Web Audio API. Use Chrome ou Edge.');
-            return;
+            console.error('Web Audio API not supported');
         }
 
-        // Inicializar MIDI
         await this.initMIDI();
-
-        // Carregar dados de exemplo
         this.loadDemoData();
-
-        // Renderizar interface
-        this.renderSetlist();
-        this.renderTracks();
-        this.renderMixer();
-
-        // Configurar atalhos de teclado
         this.setupKeyboardShortcuts();
-
-        // Iniciar loop de atualização
         this.startUpdateLoop();
-
-        console.log('VS Player Pro inicializado');
+        
+        // Desenhar waveform inicial
+        this.drawWaveform();
     }
 
     async initMIDI() {
         if (navigator.requestMIDIAccess) {
             try {
-                this.midiAccess = await navigator.requestMIDIAccess();
-                this.midiAccess.inputs.forEach(input => {
-                    input.onmidimessage = (event) => this.handleMIDIMessage(event);
+                const midi = await navigator.requestMIDIAccess();
+                midi.inputs.forEach(input => {
+                    input.onmidimessage = (e) => this.handleMIDI(e);
                 });
-                document.getElementById('midiIndicator').classList.add('active');
-                console.log('MIDI inicializado');
+                document.getElementById('midiDot').classList.add('active');
             } catch (e) {
-                console.warn('MIDI não disponível:', e);
+                console.warn('MIDI not available');
             }
         }
     }
 
-    handleMIDIMessage(event) {
-        const [command, note, velocity] = event.data;
-        
-        // Note On (144) ou Control Change (176)
-        if (command === 144 || command === 176) {
-            switch(note) {
-                case 64: // Sustain pedal
-                case 0:  // CC 0
-                    this.togglePlay();
-                    break;
-                case 1:
-                    this.stop();
-                    break;
-                case 2:
-                    this.prevSong();
-                    break;
-                case 3:
-                    this.nextSong();
-                    break;
-            }
+    handleMIDI(event) {
+        const [cmd, note, vel] = event.data;
+        if (cmd === 144 || cmd === 176) {
+            if (note === 64 || note === 0) this.togglePlay();
+            else if (note === 1) this.stop();
+            else if (note === 2) this.prevSong();
+            else if (note === 3) this.nextSong();
         }
     }
 
     loadDemoData() {
-        // Dados de demonstração
         this.songs = [
             {
                 id: 1,
-                title: "Amazing Grace",
-                artist: "Hino Tradicional",
-                bpm: 72,
-                key: "G",
-                duration: 245,
-                tracks: [
-                    { name: "Click", type: "click", icon: "🎵", volume: 0.8, muted: false, output: "Click" },
-                    { name: "Guide", type: "guide", icon: "🎤", volume: 0.6, muted: false, output: "Guide" },
-                    { name: "Drums", type: "drums", icon: "🥁", volume: 0.9, muted: false, output: "Main" },
-                    { name: "Bass", type: "bass", icon: "🎸", volume: 0.85, muted: false, output: "Main" },
-                    { name: "Pads", type: "pads", icon: "🎹", volume: 0.7, muted: false, output: "Main" },
-                    { name: "Synth", type: "synth", icon: "🎛️", volume: 0.75, muted: true, output: "Main" }
+                title: "Oceans (Where Feet May Fail)",
+                artist: "Hillsong United",
+                bpm: 65,
+                key: "D",
+                duration: 540,
+                stems: [
+                    { type: 'click', volume: 0.8, muted: false, solo: false },
+                    { type: 'drums', volume: 0.9, muted: false, solo: false },
+                    { type: 'bass', volume: 0.85, muted: false, solo: false },
+                    { type: 'pads', volume: 0.7, muted: false, solo: false },
+                    { type: 'keys', volume: 0.75, muted: false, solo: false },
+                    { type: 'guitars', volume: 0.8, muted: true, solo: false },
+                    { type: 'vocals', volume: 0.6, muted: true, solo: false }
                 ]
             },
             {
                 id: 2,
-                title: "Oceans",
-                artist: "Hillsong United",
-                bpm: 63,
-                key: "D",
-                duration: 312,
-                tracks: [
-                    { name: "Click", type: "click", icon: "🎵", volume: 0.8, muted: false, output: "Click" },
-                    { name: "Guide", type: "guide", icon: "🎤", volume: 0.6, muted: true, output: "Guide" },
-                    { name: "Drums", type: "drums", icon: "🥁", volume: 0.9, muted: false, output: "Main" },
-                    { name: "Bass", type: "bass", icon: "🎸", volume: 0.85, muted: false, output: "Main" },
-                    { name: "Pads", type: "pads", icon: "🎹", volume: 0.7, muted: false, output: "Main" },
-                    { name: "Strings", type: "strings", icon: "🎻", volume: 0.6, muted: false, output: "Main" }
-                ]
-            },
-            {
-                id: 3,
                 title: "What A Beautiful Name",
                 artist: "Hillsong Worship",
                 bpm: 68,
                 key: "D",
-                duration: 258,
-                tracks: [
-                    { name: "Click", type: "click", icon: "🎵", volume: 0.8, muted: false, output: "Click" },
-                    { name: "Guide", type: "guide", icon: "🎤", volume: 0.6, muted: true, output: "Guide" },
-                    { name: "Drums", type: "drums", icon: "🥁", volume: 0.9, muted: false, output: "Main" },
-                    { name: "Bass", type: "bass", icon: "🎸", volume: 0.85, muted: false, output: "Main" },
-                    { name: "Piano", type: "piano", icon: "🎹", volume: 0.75, muted: false, output: "Main" },
-                    { name: "Orchestra", type: "orch", icon: "🎼", volume: 0.7, muted: false, output: "Main" }
+                duration: 420,
+                stems: [
+                    { type: 'click', volume: 0.8, muted: false, solo: false },
+                    { type: 'drums', volume: 0.9, muted: false, solo: false },
+                    { type: 'bass', volume: 0.85, muted: false, solo: false },
+                    { type: 'orchestra', volume: 0.75, muted: false, solo: false },
+                    { type: 'pads', volume: 0.7, muted: false, solo: false }
+                ]
+            },
+            {
+                id: 3,
+                title: "Graves Into Gardens",
+                artist: "Elevation Worship",
+                bpm: 72,
+                key: "B",
+                duration: 380,
+                stems: [
+                    { type: 'click', volume: 0.8, muted: false, solo: false },
+                    { type: 'drums', volume: 0.9, muted: false, solo: false },
+                    { type: 'bass', volume: 0.85, muted: false, solo: false },
+                    { type: 'synth', volume: 0.8, muted: false, solo: false },
+                    { type: 'guitars', volume: 0.75, muted: false, solo: false }
                 ]
             }
         ];
 
-        // Selecionar primeira música
-        if (this.songs.length > 0) {
-            this.loadSong(0);
-        }
+        if (this.songs.length > 0) this.loadSong(0);
     }
 
     loadSong(index) {
@@ -1347,28 +1508,24 @@ class VSPlayer {
         
         this.currentSongIndex = index;
         const song = this.songs[index];
-        this.bpm = song.bpm;
+        this.stems = song.stems;
         this.duration = song.duration;
         this.currentTime = 0;
-        this.tracks = song.tracks;
+        this.bpm = song.bpm;
 
-        // Atualizar interface
-        document.getElementById('currentSongTitle').textContent = song.title;
-        document.getElementById('currentSongMeta').textContent = `${song.artist} | ${song.key} | ${this.formatTime(song.duration)}`;
-        document.getElementById('bpmDisplay').textContent = song.bpm;
+        // Update UI
+        document.getElementById('timelineTitle').textContent = song.title;
+        document.getElementById('timelineArtist').textContent = `${song.artist} • ${song.key} • ${song.bpm} BPM`;
         document.getElementById('totalTime').textContent = this.formatTime(song.duration);
-        document.getElementById('showTitle').textContent = song.title;
-        document.getElementById('showTempo').textContent = song.bpm;
+        document.getElementById('songCount').textContent = `${this.songs.length} songs`;
 
-        // Próxima música
-        const nextIndex = index + 1;
-        const nextTitle = nextIndex < this.songs.length ? this.songs[nextIndex].title : '--';
-        document.getElementById('nextSongTitle').textContent = nextTitle;
-        document.getElementById('showNextTitle').textContent = nextTitle;
+        // Next song
+        const next = this.songs[index + 1];
+        document.getElementById('nextTitle').textContent = next ? next.title : '--';
+        document.getElementById('nextMeta').textContent = next ? `${next.key} • ${next.bpm} BPM` : '';
 
-        // Atualizar setlist visual
         this.renderSetlist();
-        this.renderTracks();
+        this.renderStems();
         this.renderMixer();
         this.updateProgress();
     }
@@ -1377,179 +1534,155 @@ class VSPlayer {
         const container = document.getElementById('setlist');
         container.innerHTML = '';
 
-        this.songs.forEach((song, index) => {
-            const item = document.createElement('div');
-            item.className = `song-item ${index === this.currentSongIndex ? 'active' : ''} ${index === this.currentSongIndex && this.isPlaying ? 'playing' : ''}`;
-            item.onclick = () => this.loadSong(index);
+        this.songs.forEach((song, i) => {
+            const el = document.createElement('div');
+            el.className = `song-item ${i === this.currentSongIndex ? 'active' : ''} ${i === this.currentSongIndex && this.isPlaying ? 'playing' : ''}`;
+            el.onclick = () => this.loadSong(i);
             
-            item.innerHTML = `
-                <div class="song-number">${String(index + 1).padStart(2, '0')}</div>
+            el.innerHTML = `
+                <div class="song-header">
+                    <span class="song-number">${String(i + 1).padStart(2, '0')}</span>
+                    <span class="song-key">${song.key}</span>
+                </div>
                 <div class="song-title">${song.title}</div>
                 <div class="song-meta">
-                    <span class="song-key">${song.key}</span>
                     <span class="song-bpm">${song.bpm} BPM</span>
                     <span>${this.formatTime(song.duration)}</span>
                 </div>
             `;
-            
-            container.appendChild(item);
+            container.appendChild(el);
         });
     }
 
-    renderTracks() {
-        const container = document.getElementById('tracksContainer');
+    renderStems() {
+        const container = document.getElementById('stemsGrid');
         container.innerHTML = '';
 
-        this.tracks.forEach((track, index) => {
-            const trackEl = document.createElement('div');
-            trackEl.className = `track ${track.muted ? 'muted' : ''} ${track.solo ? 'solo' : ''}`;
+        this.stems.forEach((stem, i) => {
+            const type = this.stemTypes[stem.type] || { icon: '🎵', color: '#666', name: stem.type };
+            const el = document.createElement('div');
             
-            trackEl.innerHTML = `
-                <div class="track-info">
-                    <div class="track-icon">${track.icon}</div>
-                    <div class="track-details">
-                        <h4>${track.name}</h4>
-                        <span>${track.type.toUpperCase()}</span>
-                    </div>
+            el.className = `stem-pad ${!stem.muted ? 'active' : ''} ${stem.muted ? 'muted' : ''} ${stem.solo ? 'solo' : ''}`;
+            el.onclick = () => this.toggleStem(i);
+            el.oncontextmenu = (e) => { e.preventDefault(); this.toggleSolo(i); };
+            
+            el.innerHTML = `
+                <div class="stem-icon" style="background: ${type.color}20; border-color: ${type.color}40;">${type.icon}</div>
+                <div class="stem-info">
+                    <div class="stem-name">${type.name}</div>
+                    <div class="stem-status">${stem.muted ? 'Muted' : stem.solo ? 'Solo' : 'Active'}</div>
                 </div>
-                
-                <div class="track-waveform">
-                    <canvas class="waveform-canvas" id="waveform-${index}" width="600" height="60"></canvas>
-                </div>
-                
-                <div class="track-controls">
-                    <button class="btn-track mute ${track.muted ? 'active' : ''}" onclick="app.toggleMute(${index})" title="Mute">M</button>
-                    <button class="btn-track solo ${track.solo ? 'active' : ''}" onclick="app.toggleSolo(${index})" title="Solo">S</button>
-                    <div class="volume-slider">
-                        <div class="volume-label">
-                            <span>Vol</span>
-                            <span>${Math.round(track.volume * 100)}%</span>
-                        </div>
-                        <input type="range" min="0" max="100" value="${track.volume * 100}" 
-                               oninput="app.setVolume(${index}, this.value)">
-                    </div>
-                </div>
+                <div class="stem-volume-bar" style="transform: scaleX(${stem.volume}); background: ${type.color}"></div>
             `;
             
-            container.appendChild(trackEl);
-            
-            // Desenhar waveform fake
-            setTimeout(() => this.drawWaveform(index), 0);
+            container.appendChild(el);
         });
-    }
-
-    drawWaveform(index) {
-        const canvas = document.getElementById(`waveform-${index}`);
-        if (!canvas) return;
-        
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
-        
-        ctx.fillStyle = '#0a0a0f';
-        ctx.fillRect(0, 0, width, height);
-        
-        ctx.strokeStyle = '#00d4ff';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        
-        for (let x = 0; x < width; x += 2) {
-            const amplitude = Math.random() * height * 0.8;
-            const y = (height - amplitude) / 2;
-            ctx.moveTo(x, y);
-            ctx.lineTo(x, y + amplitude);
-        }
-        
-        ctx.stroke();
-        
-        // Linha de progresso
-        const progress = this.currentTime / this.duration;
-        ctx.strokeStyle = '#ff006e';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(width * progress, 0);
-        ctx.lineTo(width * progress, height);
-        ctx.stroke();
     }
 
     renderMixer() {
-        const container = document.getElementById('mixerSection');
+        const container = document.getElementById('mixerChannels');
         container.innerHTML = '';
 
-        this.tracks.forEach((track, index) => {
-            const channel = document.createElement('div');
-            channel.className = 'mixer-channel';
+        this.stems.forEach((stem, i) => {
+            const type = this.stemTypes[stem.type] || { icon: '🎵', name: stem.type };
+            const ch = document.createElement('div');
             
-            channel.innerHTML = `
-                <div class="mixer-label">
-                    <span>${track.name}</span>
-                    <span>${Math.round(track.volume * 100)}%</span>
+            ch.className = `mixer-channel ${!stem.muted ? 'active' : ''}`;
+            ch.innerHTML = `
+                <div class="channel-label">${type.name}</div>
+                <div class="channel-icon">${type.icon}</div>
+                <div class="pan-knob"></div>
+                <div class="fader-container">
+                    <div class="fader-track"></div>
+                    <div class="fader-thumb" style="bottom: ${stem.volume * 100}%"></div>
                 </div>
-                <input type="range" min="0" max="100" value="${track.volume * 100}" 
-                       oninput="app.setVolume(${index}, this.value)" style="width: 100%;">
-                <div class="pan-slider">
-                    <input type="range" min="-50" max="50" value="0" style="width: 100%;">
+                <div class="channel-buttons">
+                    <button class="channel-btn mute ${stem.muted ? 'active' : ''}" onclick="event.stopPropagation(); app.toggleMute(${i})">M</button>
+                    <button class="channel-btn solo ${stem.solo ? 'active' : ''}" onclick="event.stopPropagation(); app.toggleSolo(${i})">S</button>
                 </div>
-                <select class="output-select" onchange="app.setOutput(${index}, this.value)">
-                    <option value="Main" ${track.output === 'Main' ? 'selected' : ''}>Main (1-2)</option>
-                    <option value="Click" ${track.output === 'Click' ? 'selected' : ''}>Click (3)</option>
-                    <option value="Guide" ${track.output === 'Guide' ? 'selected' : ''}>Guide (4)</option>
-                    <option value="Drums" ${track.output === 'Drums' ? 'selected' : ''}>Drums (5-6)</option>
-                </select>
             `;
             
-            container.appendChild(channel);
+            // Fader interaction
+            const fader = ch.querySelector('.fader-container');
+            const thumb = ch.querySelector('.fader-thumb');
+            let dragging = false;
+            
+            fader.addEventListener('mousedown', (e) => {
+                dragging = true;
+                updateVolume(e);
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (dragging) updateVolume(e);
+            });
+            
+            document.addEventListener('mouseup', () => dragging = false);
+            
+            const updateVolume = (e) => {
+                const rect = fader.getBoundingClientRect();
+                const y = rect.bottom - e.clientY;
+                const pct = Math.max(0, Math.min(100, (y / rect.height) * 100));
+                stem.volume = pct / 100;
+                thumb.style.bottom = pct + '%';
+                this.renderStems();
+            };
+            
+            container.appendChild(ch);
         });
     }
 
+    drawWaveform() {
+        const canvas = document.getElementById('waveformCanvas');
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width = canvas.offsetWidth;
+        const h = canvas.height = canvas.offsetHeight;
+        
+        ctx.fillStyle = '#0d0d0f';
+        ctx.fillRect(0, 0, w, h);
+        
+        // Draw waveform
+        ctx.strokeStyle = '#00d4ff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        for (let x = 0; x < w; x += 3) {
+            const amp = Math.random() * h * 0.6 + h * 0.2;
+            const y = (h - amp) / 2;
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y + amp);
+        }
+        ctx.stroke();
+        
+        // Progress overlay
+        const progress = this.currentTime / this.duration;
+        ctx.fillStyle = 'rgba(0, 212, 255, 0.1)';
+        ctx.fillRect(0, 0, w * progress, h);
+    }
+
     togglePlay() {
-        if (this.isPlaying) {
-            this.pause();
-        } else {
-            this.play();
-        }
-    }
-
-    play() {
-        if (!this.audioContext) return;
-        if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
-        }
-        
-        this.isPlaying = true;
-        document.getElementById('playBtn').innerHTML = '⏸';
-        document.getElementById('showPlayBtn').innerHTML = '⏸';
-        this.renderSetlist(); // Atualizar indicador visual
-        
-        // Aqui seria iniciado o playback real dos áudios
-        console.log('Play - iniciando playback');
-    }
-
-    pause() {
-        this.isPlaying = false;
-        document.getElementById('playBtn').innerHTML = '▶';
-        document.getElementById('showPlayBtn').innerHTML = '▶';
+        this.isPlaying = !this.isPlaying;
+        const icon = this.isPlaying ? '⏸' : '▶';
+        document.getElementById('playBtn').innerHTML = icon;
+        document.getElementById('transportPlayBtn').innerHTML = icon;
         this.renderSetlist();
-        console.log('Pause');
     }
 
     stop() {
         this.isPlaying = false;
         this.currentTime = 0;
         document.getElementById('playBtn').innerHTML = '▶';
-        document.getElementById('showPlayBtn').innerHTML = '▶';
+        document.getElementById('transportPlayBtn').innerHTML = '▶';
         this.updateProgress();
         this.renderSetlist();
-        console.log('Stop');
     }
 
     nextSong() {
         if (this.currentSongIndex < this.songs.length - 1) {
             this.stop();
             this.loadSong(this.currentSongIndex + 1);
-            if (this.settings.autoAdvance) {
-                setTimeout(() => this.play(), 500);
-            }
+            if (this.settings.autoAdvance) setTimeout(() => this.togglePlay(), 300);
         }
     }
 
@@ -1560,80 +1693,56 @@ class VSPlayer {
         }
     }
 
-    seek(event) {
-        const bar = event.currentTarget;
-        const rect = bar.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const percent = x / rect.width;
-        this.currentTime = this.duration * percent;
+    seek(e) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const pct = x / rect.width;
+        this.currentTime = this.duration * pct;
         this.updateProgress();
     }
 
     updateProgress() {
-        const percent = (this.currentTime / this.duration) * 100;
-        document.getElementById('progressBar').style.width = percent + '%';
-        document.getElementById('showProgressBar').style.width = percent + '%';
+        const pct = (this.currentTime / this.duration) * 100;
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('playhead').style.left = pct + '%';
         document.getElementById('timeDisplay').textContent = this.formatTime(this.currentTime);
-        
-        // Redesenhar waveforms
-        this.tracks.forEach((_, index) => this.drawWaveform(index));
+        document.getElementById('currentTime').textContent = this.formatTime(this.currentTime);
+        this.drawWaveform();
     }
 
-    startUpdateLoop() {
-        setInterval(() => {
-            if (this.isPlaying) {
-                this.currentTime += 0.1;
-                if (this.currentTime >= this.duration) {
-                    if (this.settings.autoAdvance && this.currentSongIndex < this.songs.length - 1) {
-                        this.nextSong();
-                    } else {
-                        this.stop();
-                    }
-                }
-                this.updateProgress();
-            }
-        }, 100);
+    toggleStem(index) {
+        this.stems[index].muted = !this.stems[index].muted;
+        this.renderStems();
+        this.renderMixer();
     }
 
     toggleMute(index) {
-        this.tracks[index].muted = !this.tracks[index].muted;
-        this.renderTracks();
+        this.stems[index].muted = !this.stems[index].muted;
+        this.renderStems();
         this.renderMixer();
     }
 
     toggleSolo(index) {
-        this.tracks[index].solo = !this.tracks[index].solo;
-        this.renderTracks();
-    }
-
-    setVolume(index, value) {
-        this.tracks[index].volume = value / 100;
+        this.stems[index].solo = !this.stems[index].solo;
+        this.renderStems();
         this.renderMixer();
     }
 
-    setOutput(index, output) {
-        this.tracks[index].output = output;
+    unmuteAll() {
+        this.stems.forEach(s => s.muted = false);
+        this.renderStems();
+        this.renderMixer();
     }
 
-    toggleClick() {
-        this.clickEnabled = !this.clickEnabled;
-        document.getElementById('clickBtn').classList.toggle('active', this.clickEnabled);
-        // Mute/unmute track de click
-        const clickTrack = this.tracks.find(t => t.type === 'click');
-        if (clickTrack) {
-            clickTrack.muted = !this.clickEnabled;
-            this.renderTracks();
-        }
+    clearSolos() {
+        this.stems.forEach(s => s.solo = false);
+        this.renderStems();
+        this.renderMixer();
     }
 
-    toggleShowMode() {
-        this.showMode = !this.showMode;
-        document.getElementById('showMode').classList.toggle('active', this.showMode);
-        if (this.showMode) {
-            document.documentElement.requestFullscreen?.();
-        } else {
-            document.exitFullscreen?.();
-        }
+    switchTab(tab) {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');
     }
 
     openAddSong() {
@@ -1654,53 +1763,35 @@ class VSPlayer {
         const key = document.getElementById('songKey').value;
         const duration = parseInt(document.getElementById('songDuration').value);
 
-        if (!name) {
-            alert('Por favor, insira o nome da música');
-            return;
-        }
+        if (!name) return alert('Please enter a song name');
 
-        const newSong = {
+        this.songs.push({
             id: Date.now(),
             title: name,
-            artist: "Artista Desconhecido",
+            artist: "Unknown Artist",
             bpm: bpm,
             key: key || "C",
             duration: duration,
-            tracks: [
-                { name: "Click", type: "click", icon: "🎵", volume: 0.8, muted: false, output: "Click" },
-                { name: "Guide", type: "guide", icon: "🎤", volume: 0.6, muted: true, output: "Guide" },
-                { name: "Mix", type: "mix", icon: "🎛️", volume: 0.9, muted: false, output: "Main" }
+            stems: [
+                { type: 'click', volume: 0.8, muted: false, solo: false },
+                { type: 'drums', volume: 0.9, muted: false, solo: false },
+                { type: 'bass', volume: 0.85, muted: false, solo: false },
+                { type: 'keys', volume: 0.75, muted: false, solo: false }
             ]
-        };
+        });
 
-        this.songs.push(newSong);
         this.renderSetlist();
         this.closeModals();
-        
-        // Limpar formulário
         document.getElementById('songName').value = '';
-        document.getElementById('songKey').value = '';
-    }
-
-    handleFiles(files) {
-        console.log('Arquivos selecionados:', files);
-        // Aqui seria processado o upload e análise dos stems
     }
 
     saveSettings() {
-        this.settings.mainOutput = document.getElementById('mainOutput').value;
-        this.settings.clickOutput = document.getElementById('clickOutput').value;
-        this.settings.midiInput = document.getElementById('midiInput').value;
-        this.settings.bufferSize = parseInt(document.getElementById('bufferSize').value);
-        this.settings.sampleRate = parseInt(document.getElementById('sampleRate').value);
         this.settings.autoAdvance = document.getElementById('autoAdvance').checked;
-        
         this.closeModals();
-        console.log('Configurações salvas:', this.settings);
     }
 
     clearSetlist() {
-        if (confirm('Limpar todo o setlist?')) {
+        if (confirm('Clear entire setlist?')) {
             this.songs = [];
             this.currentSongIndex = -1;
             this.renderSetlist();
@@ -1724,18 +1815,26 @@ class VSPlayer {
         input.onchange = (e) => {
             const file = e.target.files[0];
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = (ev) => {
                 try {
-                    this.songs = JSON.parse(event.target.result);
+                    this.songs = JSON.parse(ev.target.result);
                     this.renderSetlist();
                     if (this.songs.length > 0) this.loadSong(0);
                 } catch (err) {
-                    alert('Erro ao carregar setlist');
+                    alert('Error loading setlist');
                 }
             };
             reader.readAsText(file);
         };
         input.click();
+    }
+
+    toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
     }
 
     setupKeyboardShortcuts() {
@@ -1754,24 +1853,34 @@ class VSPlayer {
                     this.prevSong();
                     break;
                 case 'Escape':
-                    if (this.showMode) this.toggleShowMode();
                     this.closeModals();
                     break;
             }
         });
     }
 
-    formatTime(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    startUpdateLoop() {
+        setInterval(() => {
+            if (this.isPlaying) {
+                this.currentTime += 0.1;
+                if (this.currentTime >= this.duration) {
+                    if (this.settings.autoAdvance) this.nextSong();
+                    else this.stop();
+                }
+                this.updateProgress();
+            }
+        }, 100);
+    }
+
+    formatTime(sec) {
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
 }
 
-// Inicializar aplicação
 const app = new VSPlayer();
 
-// Prevenir fechamento acidental durante playback
 window.addEventListener('beforeunload', (e) => {
     if (app.isPlaying) {
         e.preventDefault();
