@@ -181,7 +181,7 @@ input[type=file]{display:none}
 </head>
 <body>
 
-<input type="file" id="globalFileInput" multiple accept="audio/*">
+<input type="file" id="globalFileInput" multiple accept="audio/*,.mp3,.wav,.flac,.aiff,.aif,.ogg,.m4a,.aac,.opus,.wma,.caf,.mp4,.3gp">
 <div class="drop-zone" id="dropZone">
   <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
   <p>Solte os arquivos aqui</p>
@@ -331,11 +331,28 @@ function destroyChain(id) {
 // ═══════════════════════════════════════════════════
 // FILE LOADING
 // ═══════════════════════════════════════════════════
+// Audio extensions accepted — covers iOS/Android files that come with empty MIME type
+const AUDIO_EXTS = /\.(mp3|wav|wave|flac|aiff|aif|ogg|oga|opus|m4a|aac|wma|caf|mp4|3gp|3gpp|webm)$/i;
+
+function isAudioFile(file) {
+  // Accept if MIME says audio, OR if extension matches (covers iOS/Android empty-type files)
+  if (file.type && file.type.startsWith('audio')) return true;
+  if (file.type && file.type.startsWith('video/mp4')) return true; // m4a comes as video/mp4 on some devices
+  if (AUDIO_EXTS.test(file.name)) return true;
+  // If no type at all (some Android pickers), attempt decode anyway
+  if (!file.type) return true;
+  return false;
+}
+
 async function loadFiles(files) {
   initAudio();
   if (isPlaying) pause();
-  for (const file of files) {
-    if (!file.type.startsWith('audio')) continue;
+  const audioFiles = Array.from(files).filter(isAudioFile);
+  if (!audioFiles.length) {
+    setSt('Nenhum arquivo de áudio reconhecido — tente WAV, MP3, M4A, FLAC', '#FF3D5A');
+    return;
+  }
+  for (const file of audioFiles) {
     await addTrackFromFile(file);
   }
 }
@@ -351,8 +368,29 @@ async function addTrackFromFile(file) {
   showTrackLoading(track.id, true);
   setSt('Decodificando ' + file.name + '...', '#FFD020');
   try {
-    const buf = await file.arrayBuffer();
-    const audioBuf = await audioCtx.decodeAudioData(buf);
+    // arrayBuffer() is the most compatible path across iOS/Android
+    let arrayBuf;
+    try {
+      arrayBuf = await file.arrayBuffer();
+    } catch(e) {
+      // Fallback: FileReader for older Android WebViews
+      arrayBuf = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result);
+        r.onerror = () => rej(r.error);
+        r.readAsArrayBuffer(file);
+      });
+    }
+
+    // decodeAudioData with Promise + callback dual path (older iOS Safari needs callback)
+    const audioBuf = await new Promise((res, rej) => {
+      audioCtx.decodeAudioData(
+        arrayBuf,
+        decoded => res(decoded),
+        err => rej(err || new Error('Decode failed'))
+      );
+    });
+
     track.buffer = audioBuf;
     DURATION = Math.max(DURATION, audioBuf.duration);
     updateHeaderChips();
@@ -363,8 +401,11 @@ async function addTrackFromFile(file) {
     countStatus();
   } catch(err) {
     showTrackLoading(track.id, false);
-    setSt('Erro ao decodificar ' + file.name, '#FF3D5A');
-    console.error(err);
+    // Mark track as failed visually without removing it
+    const fileEl = document.getElementById('tfile-' + track.id);
+    if (fileEl) { fileEl.textContent = 'formato não suportado pelo navegador'; fileEl.style.color = '#FF3D5A'; }
+    setSt('Erro ao decodificar "' + file.name + '" — tente converter para WAV ou MP3', '#FF3D5A');
+    console.error('decodeAudioData error:', err);
   }
 }
 
@@ -876,7 +917,7 @@ document.addEventListener('dragover',e=>{e.preventDefault();document.getElementB
 document.addEventListener('dragleave',e=>{if(!e.relatedTarget)document.getElementById('dropZone').classList.remove('active');});
 document.addEventListener('drop',async e=>{
   e.preventDefault();document.getElementById('dropZone').classList.remove('active');
-  const files=Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('audio'));
+  const files=Array.from(e.dataTransfer.files).filter(isAudioFile);
   if(files.length)await loadFiles(files);
 });
 
