@@ -220,6 +220,8 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
 .auto-adv-row{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--txt2)}
 
 /* Floating project button */
+.float-new{position:fixed;right:16px;bottom:118px;z-index:70;width:46px;height:46px;border-radius:50%;background:var(--bg2);border:1px solid var(--border2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .15s;color:var(--txt2);box-shadow:0 4px 20px rgba(0,0,0,.4);font-size:22px;font-weight:300;line-height:1}
+.float-new:hover{background:var(--ok);border-color:var(--ok);color:#fff;box-shadow:0 4px 20px rgba(32,232,122,.35)}
 .float-proj{position:fixed;right:16px;bottom:64px;z-index:70;width:46px;height:46px;border-radius:50%;background:var(--bg2);border:1px solid var(--border2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .15s;color:var(--txt2);box-shadow:0 4px 20px rgba(0,0,0,.4)}
 .float-proj:hover{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 20px rgba(232,114,26,.4)}
 .float-proj-count{font-size:8px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:1px}
@@ -325,6 +327,7 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
 
   /* Botão flutuante de projetos: sobe acima do footer mais alto */
   .float-proj { bottom: 106px; right: 12px; width: 42px; height: 42px; }
+  .float-new  { bottom: 158px; right: 12px; width: 42px; height: 42px; }
 
   /* Gaveta de projetos: largura total */
   .proj-drawer { width: 100%; }
@@ -366,22 +369,7 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
   </div>
 </header>
 
-<!-- Project meta bar -->
-<div class="proj-bar hidden" id="projBar">
-  <div class="proj-photo-placeholder" id="projPhotoWrap">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-  </div>
-  <div class="proj-meta">
-    <div class="proj-title" id="projTitle">Sem título</div>
-    <div class="proj-artist" id="projArtist">Artista desconhecido</div>
-  </div>
-  <div class="proj-actions">
-    <button class="proj-edit-btn" id="btnEditMeta">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      <span class="btn-lbl">Editar info</span>
-    </button>
-  </div>
-</div>
+
 
 <!-- Transport -->
 <div class="transport">
@@ -466,6 +454,11 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
     </button>
   </div>
 </footer>
+
+<!-- New project floating button -->
+<button class="float-new" id="floatNewBtn" title="Novo projeto">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
 
 <!-- Floating project button -->
 <button class="float-proj" id="floatProjBtn">
@@ -564,6 +557,7 @@ let currentProjectId = null;
 let currentProjectMeta = { name: '', artist: '', photo: null };
 let tempPhotoBase64 = null;
 let db = null;
+let saveModeModal = false;
 
 // ═══════════════════════════════════════════════════════════════
 // INDEXEDDB
@@ -765,7 +759,7 @@ async function addTrackFromFile(file) {
     showTrackLoad(track.id, false);
     drawStaticWave(track.id);
     countSt();
-    document.getElementById('projBar').classList.remove('hidden');
+    
   } catch(err) {
     showTrackLoad(track.id, false);
     const fe = document.getElementById('tfile-'+track.id);
@@ -1102,7 +1096,7 @@ function removeTrack(id) {
   DURATION=tracks.reduce((mx,t)=>t.buffer?Math.max(mx,t.buffer.duration):mx,0);
   updateChips();countSt();
   renderCompositeMix();
-  if(!tracks.length){document.getElementById('projBar').classList.add('hidden');document.getElementById('trackList').innerHTML=buildEmpty();}
+  if(!tracks.length){document.getElementById('trackList').innerHTML=buildEmpty();}
   saveSession();
 }
 
@@ -1282,12 +1276,12 @@ async function saveProject() {
     await dbPut('projects', proj);
     for (const track of tracks) {
       if (!track.buffer) continue;
-      const off = new OfflineAudioContext(track.buffer.numberOfChannels, track.buffer.length, track.buffer.sampleRate);
-      const src = off.createBufferSource(); src.buffer = track.buffer; src.connect(off.destination); src.start();
-      const rendered = await off.startRendering();
+      // Store Float32Array directly — much faster and smaller than Array.from()
       const channels = [];
-      for(let c=0;c<rendered.numberOfChannels;c++) channels.push(Array.from(rendered.getChannelData(c)));
-      await dbPut('audio', {key:`${proj.id}_${track.id}`, channels, sampleRate:rendered.sampleRate, length:rendered.length});
+      for (let c = 0; c < track.buffer.numberOfChannels; c++) {
+        channels.push(track.buffer.getChannelData(c).slice());
+      }
+      await dbPut('audio', {key:`${proj.id}_${track.id}`, channels, sampleRate:track.buffer.sampleRate, length:track.buffer.length});
     }
     const existing=projects.findIndex(p=>p.id===proj.id);
     if(existing>=0)projects[existing]=proj; else projects.push(proj);
@@ -1315,7 +1309,7 @@ async function loadProject(id) {
   currentProjectMeta={name:proj.name,artist:proj.artist,photo:proj.photo||null};
   sections=proj.sections||[];
   document.getElementById('bpmInput').value=proj.bpm||120;
-  updateProjectBar();
+
   setSt('Carregando projeto "'+proj.name+'"...','var(--warn)');
   // Load audio for each track
   for(const tInfo of (proj.tracks||[])) {
@@ -1332,7 +1326,7 @@ async function loadProject(id) {
     renderTrackEl(track);
     if (audioRec) {
       const buf = audioCtx.createBuffer(audioRec.channels.length, audioRec.length, audioRec.sampleRate);
-      audioRec.channels.forEach((ch,i)=>buf.copyToChannel(new Float32Array(ch),i));
+      audioRec.channels.forEach((ch,i)=>buf.copyToChannel(ch instanceof Float32Array?ch:new Float32Array(ch),i));
       track.buffer=buf;
       DURATION=Math.max(DURATION,buf.duration);
       cacheWave(track,buf);
@@ -1341,7 +1335,7 @@ async function loadProject(id) {
   }
   await renderCompositeMix();
   updateChips(); countSt();
-  document.getElementById('projBar').classList.remove('hidden');
+  
   drawSectionsOverlay();
   saveSession();
   renderProjectList();
@@ -1404,7 +1398,7 @@ async function importPtracks(file) {
     currentProjectMeta = {name:proj.name||'',artist:proj.artist||'',photo:proj.photo||null};
     sections = proj.sections||[];
     document.getElementById('bpmInput').value = proj.bpm||120;
-    updateProjectBar();
+  
     for (const tInfo of proj.tracks) {
       const track={id:nextId++,name:tInfo.name,hex:tInfo.hex,fileName:tInfo.fileName,buffer:null,waveformCache:null,muted:tInfo.muted||false,soloed:tInfo.soloed||false,vol:tInfo.vol||80,pan:tInfo.pan||0,phase:tInfo.phase||false,settingsOpen:false,eq:tInfo.eq||{low:{gain:0,freq:80},mid:{gain:0,freq:1000,q:1},high:{gain:0,freq:8000}},sends:tInfo.sends||{reverb:0,delay:0}};
       tracks.push(track); renderTrackEl(track);
@@ -1417,7 +1411,7 @@ async function importPtracks(file) {
       }
     }
     await renderCompositeMix(); updateChips(); countSt();
-    document.getElementById('projBar').classList.remove('hidden');
+    
     // Save to DB
     await saveProject();
     drawSectionsOverlay();
@@ -1440,7 +1434,13 @@ function bufferToWav(buffer) {
   for(let i=0;i<len;i++) for(let c=0;c<numCh;c++){const s=Math.max(-1,Math.min(1,buffer.getChannelData(c)[i]));view.setInt16(offset,s<0?s*0x8000:s*0x7FFF,true);offset+=2;}
   return out;
 }
-function arrayBufferToBase64(buf){let b='';const b8=new Uint8Array(buf);for(let i=0;i<b8.byteLength;i++)b+=String.fromCharCode(b8[i]);return btoa(b);}
+function arrayBufferToBase64(buf){
+  const bytes=new Uint8Array(buf);
+  const chunk=8192;
+  let b='';
+  for(let i=0;i<bytes.length;i+=chunk) b+=String.fromCharCode.apply(null,bytes.subarray(i,i+chunk));
+  return btoa(b);
+}
 function base64ToArrayBuffer(b64){const bin=atob(b64);const b=new ArrayBuffer(bin.length);const v=new Uint8Array(b);for(let i=0;i<bin.length;i++)v[i]=bin.charCodeAt(i);return b;}
 
 // ═══════════════════════════════════════════════════════════════
@@ -1470,16 +1470,7 @@ async function restoreSession() {
 // ═══════════════════════════════════════════════════════════════
 // PROJECT BAR & DRAWER
 // ═══════════════════════════════════════════════════════════════
-function updateProjectBar() {
-  document.getElementById('projTitle').textContent = currentProjectMeta.name||'Sem título';
-  document.getElementById('projArtist').textContent = currentProjectMeta.artist||'Artista desconhecido';
-  const wrap=document.getElementById('projPhotoWrap');
-  if(currentProjectMeta.photo){
-    wrap.innerHTML=`<img class="proj-photo" src="${currentProjectMeta.photo}" alt="Artista">`;
-  } else {
-    wrap.innerHTML=`<div class="proj-photo-placeholder"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>`;
-  }
-}
+// project bar removed — meta shown only in save modal
 
 function renderProjectList() {
   const list=document.getElementById('projList'); list.innerHTML='';
@@ -1545,15 +1536,15 @@ document.getElementById('photoInput').addEventListener('change',function(e){
   this.value='';
 });
 
-document.getElementById('metaSave').onclick=()=>{
-  currentProjectMeta.name=document.getElementById('metaName').value.trim()||'Sem título';
-  currentProjectMeta.artist=document.getElementById('metaArtist').value.trim()||'Artista desconhecido';
-  currentProjectMeta.photo=tempPhotoBase64;
-  updateProjectBar();
+document.getElementById('metaSave').onclick = async () => {
+  currentProjectMeta.name   = document.getElementById('metaName').value.trim()   || 'Sem título';
+  currentProjectMeta.artist = document.getElementById('metaArtist').value.trim() || 'Artista desconhecido';
+  currentProjectMeta.photo  = tempPhotoBase64;
   closeMetaModal();
+  if (saveModeModal) { saveModeModal = false; await saveProject(); }
 };
-document.getElementById('metaCancel').onclick=closeMetaModal;
-document.getElementById('metaModal').onclick=e=>{if(e.target===document.getElementById('metaModal'))closeMetaModal();};
+document.getElementById('metaCancel').onclick = () => { saveModeModal = false; closeMetaModal(); };
+document.getElementById('metaModal').onclick = e => { if(e.target===document.getElementById('metaModal')){ saveModeModal=false; closeMetaModal(); } };
 
 // ═══════════════════════════════════════════════════════════════
 // TIMELINE SEEK + SECTION MAPPING
@@ -1628,6 +1619,28 @@ document.getElementById('btnDoneMap').onclick=()=>{
 document.getElementById('btnClearSections').onclick=()=>{sections=[];drawSectionsOverlay();};
 
 // ═══════════════════════════════════════════════════════════════
+// NEW PROJECT
+// ═══════════════════════════════════════════════════════════════
+function newProject() {
+  if (tracks.length) {
+    const ok = confirm('Criar novo projeto? As faixas não salvas serão perdidas.');
+    if (!ok) return;
+  }
+  if (isPlaying) pause();
+  tracks.forEach(t => destroyChain(t.id));
+  tracks = []; nextId = 1; DURATION = 0; pauseOffset = 0; masterPeaks = null;
+  sections = []; currentProjectId = null;
+  currentProjectMeta = { name: '', artist: '', photo: null };
+  document.getElementById('trackList').innerHTML = buildEmpty();
+  trackNodes = {};
+  movePH(0); updT(0);
+  drawMasterWaveform();
+  updateChips();
+  setSt('Novo projeto criado — importe áudio para começar', 'var(--ok)');
+  saveSession();
+}
+
+// ═══════════════════════════════════════════════════════════════
 // EVENTS
 // ═══════════════════════════════════════════════════════════════
 document.getElementById('btnPlay').onclick=()=>isPlaying?pause():play();
@@ -1649,13 +1662,14 @@ fillSlider(document.getElementById('masterVol'),'var(--accent)');
 document.getElementById('btnImport').onclick=()=>document.getElementById('gFileInput').click();
 document.getElementById('gFileInput').addEventListener('change',async function(e){const f=Array.from(e.target.files);if(!f.length)return;await loadFiles(f);this.value='';});
 
-document.getElementById('btnSaveProj').onclick=saveProject;
+document.getElementById('btnSaveProj').onclick = () => { saveModeModal = true; openMetaModal(); };
 document.getElementById('btnExport').onclick=exportPtracks;
 document.getElementById('btnLoadPtracks').onclick=()=>document.getElementById('ptracksInput').click();
 document.getElementById('ptracksInput').addEventListener('change',async function(e){if(e.target.files[0])await importPtracks(e.target.files[0]);this.value='';closeDrawer();});
 
-document.getElementById('btnEditMeta').onclick=openMetaModal;
+// btnEditMeta removed with proj-bar
 document.getElementById('floatProjBtn').onclick=openDrawer;
+document.getElementById('floatNewBtn').onclick=newProject;
 document.getElementById('btnCloseDrawer').onclick=closeDrawer;
 document.getElementById('projOverlay').onclick=closeDrawer;
 document.getElementById('autoAdvToggle').onclick=function(){autoAdvance=!autoAdvance;this.classList.toggle('on',autoAdvance);saveSession();};
