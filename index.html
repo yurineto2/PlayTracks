@@ -732,7 +732,8 @@ async function loadFiles(files) {
   for (const f of good) await addTrackFromFile(f);
   await renderCompositeMix();
   updateChips();
-  saveSession();
+  // Auto-backup so mobile page reloads can restore without user having to save manually
+  await autoBackup();
 }
 
 async function addTrackFromFile(file) {
@@ -1446,6 +1447,35 @@ function base64ToArrayBuffer(b64){const bin=atob(b64);const b=new ArrayBuffer(bi
 // ═══════════════════════════════════════════════════════════════
 // SESSION PERSISTENCE
 // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// AUTO-BACKUP (mobile page-eviction protection)
+// ═══════════════════════════════════════════════════════════════
+async function autoBackup() {
+  if (!tracks.length || !db) { saveSession(); return; }
+  // Assign a stable ID if the user hasn't saved yet
+  if (!currentProjectId) currentProjectId = 'autosave_' + Date.now();
+  try {
+    const proj = buildProjectObj();
+    await dbPut('projects', proj);
+    for (const track of tracks) {
+      if (!track.buffer) continue;
+      const channels = [];
+      for (let c = 0; c < track.buffer.numberOfChannels; c++) {
+        channels.push(track.buffer.getChannelData(c).slice());
+      }
+      await dbPut('audio', {key:`${proj.id}_${track.id}`, channels, sampleRate:track.buffer.sampleRate, length:track.buffer.length});
+    }
+    const idx = projects.findIndex(p => p.id === proj.id);
+    if (idx >= 0) projects[idx] = proj; else projects.push(proj);
+    saveSession();
+    renderProjectList();
+    document.getElementById('projCount').textContent = projects.length;
+  } catch(e) {
+    console.warn('Auto-backup failed:', e);
+    saveSession();
+  }
+}
+
 function saveSession() {
   const session={currentProjectId,autoAdvance,projects:projects.map(p=>({id:p.id,name:p.name,artist:p.artist,photo:p.photo,bpm:p.bpm,duration:p.duration,trackCount:(p.tracks||[]).length}))};
   try{localStorage.setItem('playtracks_session',JSON.stringify(session));}catch(e){}
@@ -1725,6 +1755,20 @@ document.getElementById('trackList').innerHTML=buildEmpty();
   await restoreSession();
   drawMasterWaveform();
 })();
+
+// iOS Safari: page restored from bfcache (back/forward) without JS re-running
+window.addEventListener('pageshow', e => {
+  if (e.persisted && !tracks.length) {
+    openDB().then(() => restoreSession()).catch(() => {});
+  }
+});
+
+// Android / iOS: app came back to foreground after being backgrounded
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !tracks.length) {
+    openDB().then(() => restoreSession()).catch(() => {});
+  }
+});
 </script>
 </body>
 </html>
