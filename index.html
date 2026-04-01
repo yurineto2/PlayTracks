@@ -1347,38 +1347,55 @@ async function loadProject(id) {
 // ═══════════════════════════════════════════════════════════════
 async function exportPtracks() {
   if (!tracks.length) { setSt('Nenhuma faixa para exportar','var(--danger)'); return; }
-  setSt('Preparando arquivo .ptracks...','var(--warn)');
   try {
     const proj = buildProjectObj();
-    const audioData = {};
+    const audioRaw = {};
+
     for (const track of tracks) {
       if (!track.buffer) continue;
-      const wavBytes = bufferToWav(track.buffer);
-      audioData[track.id] = arrayBufferToBase64(wavBytes);
+      setSt('Codificando "' + track.name + '"...','var(--warn)');
+      await new Promise(r => setTimeout(r, 0)); // yield — keep UI alive
+      const channels = [];
+      for (let c = 0; c < track.buffer.numberOfChannels; c++) {
+        const f32 = track.buffer.getChannelData(c).slice(); // Float32Array copy
+        channels.push(arrayBufferToBase64(f32.buffer));
+      }
+      audioRaw[track.id] = { channels, sampleRate: track.buffer.sampleRate, length: track.buffer.length, format: 'float32' };
     }
-    const exportObj = { ...proj, audioData, exportedAt: new Date().toISOString(), version:'1.0' };
+
+    setSt('Gerando arquivo...','var(--warn)');
+    await new Promise(r => setTimeout(r, 0));
+
+    const exportObj = { ...proj, audioRaw, exportedAt: new Date().toISOString(), version: '2.0' };
     const json = JSON.stringify(exportObj);
-    const blob = new Blob([json], {type:'application/json'});
+    const blob = new Blob([json], { type: 'application/json' });
+
     if (window.showSaveFilePicker) {
       try {
         const fh = await window.showSaveFilePicker({
-          suggestedName: (proj.name||'projeto').replace(/\s+/g,'_') + '.ptracks',
-          types:[{description:'PlayTracks Project',accept:{'application/json':['.ptracks']}}]
+          suggestedName: (proj.name || 'projeto').replace(/\s+/g,'_') + '.ptracks',
+          types: [{ description: 'PlayTracks Project', accept: { 'application/json': ['.ptracks'] } }]
         });
         const writable = await fh.createWritable();
         await writable.write(blob);
         await writable.close();
         setSt('Projeto exportado com sucesso','var(--ok)');
         return;
-      } catch(e) { if(e.name==='AbortError')return; }
+      } catch(e) { if (e.name === 'AbortError') return; }
     }
+
+    // Fallback: <a> download
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href=url; a.download=(proj.name||'projeto').replace(/\s+/g,'_')+'.ptracks'; a.click();
-    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    a.href = url;
+    a.download = (proj.name || 'projeto').replace(/\s+/g,'_') + '.ptracks';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
     setSt('Arquivo .ptracks baixado','var(--ok)');
   } catch(err) {
-    setSt('Erro ao exportar: '+err.message,'var(--danger)');
+    setSt('Erro ao exportar: ' + err.message,'var(--danger)');
     console.error('exportPtracks error:', err);
   }
 }
@@ -1403,7 +1420,19 @@ async function importPtracks(file) {
     for (const tInfo of proj.tracks) {
       const track={id:nextId++,name:tInfo.name,hex:tInfo.hex,fileName:tInfo.fileName,buffer:null,waveformCache:null,muted:tInfo.muted||false,soloed:tInfo.soloed||false,vol:tInfo.vol||80,pan:tInfo.pan||0,phase:tInfo.phase||false,settingsOpen:false,eq:tInfo.eq||{low:{gain:0,freq:80},mid:{gain:0,freq:1000,q:1},high:{gain:0,freq:8000}},sends:tInfo.sends||{reverb:0,delay:0}};
       tracks.push(track); renderTrackEl(track);
-      if (proj.audioData && proj.audioData[tInfo.id]) {
+
+      if (proj.audioRaw && proj.audioRaw[tInfo.id]) {
+        // New Float32 format — fast, no decode step
+        showTrackLoad(track.id, true);
+        const raw = proj.audioRaw[tInfo.id];
+        const buf = audioCtx.createBuffer(raw.channels.length, raw.length, raw.sampleRate);
+        raw.channels.forEach((b64, i) => {
+          buf.copyToChannel(new Float32Array(base64ToArrayBuffer(b64)), i);
+        });
+        track.buffer = buf; DURATION = Math.max(DURATION, buf.duration);
+        cacheWave(track, buf); showTrackLoad(track.id, false); drawStaticWave(track.id);
+      } else if (proj.audioData && proj.audioData[tInfo.id]) {
+        // Legacy WAV format — backward compat
         showTrackLoad(track.id,true);
         const ab = base64ToArrayBuffer(proj.audioData[tInfo.id]);
         const buf = await new Promise((r,j)=>audioCtx.decodeAudioData(ab.slice(0),r,j));
@@ -1420,21 +1449,7 @@ async function importPtracks(file) {
   } catch(e) { setSt('Erro ao importar .ptracks: '+e.message,'var(--danger)'); console.error(e); }
 }
 
-// WAV encoder
-function bufferToWav(buffer) {
-  const numCh=buffer.numberOfChannels, sr=buffer.sampleRate, len=buffer.length;
-  const out=new ArrayBuffer(44+len*numCh*2), view=new DataView(out);
-  const writeStr=(v,o)=>[...v].forEach((c,i)=>view.setUint8(o+i,c.charCodeAt(0)));
-  writeStr('RIFF',0); view.setUint32(4,36+len*numCh*2,true);
-  writeStr('WAVE',8); writeStr('fmt ',12);
-  view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,numCh,true);
-  view.setUint32(24,sr,true); view.setUint32(28,sr*numCh*2,true);
-  view.setUint16(32,numCh*2,true); view.setUint16(34,16,true);
-  writeStr('data',36); view.setUint32(40,len*numCh*2,true);
-  let offset=44;
-  for(let i=0;i<len;i++) for(let c=0;c<numCh;c++){const s=Math.max(-1,Math.min(1,buffer.getChannelData(c)[i]));view.setInt16(offset,s<0?s*0x8000:s*0x7FFF,true);offset+=2;}
-  return out;
-}
+// ─── base64 helpers ───
 function arrayBufferToBase64(buf){
   const bytes=new Uint8Array(buf);
   const chunk=8192;
