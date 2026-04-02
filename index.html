@@ -568,6 +568,7 @@ let db = null;
 let saveModeModal = false;
 let allMuted = false;
 let isTransitioning = false; // true while loading next project for auto-advance
+let isLoadingProject = false; // lock to prevent concurrent project loads
 
 // ═══════════════════════════════════════════════════════════════
 // INDEXEDDB
@@ -1376,6 +1377,9 @@ async function saveProject() {
 }
 
 async function loadProject(id, autoPlay = false) {
+  if (isLoadingProject) return; // prevent double-load
+  isLoadingProject = true;
+  try {
   const proj = await dbGet('projects', id);
   if (!proj) { setSt('Projeto não encontrado','var(--danger)'); return; }
   if (isPlaying) pause();
@@ -1424,6 +1428,9 @@ async function loadProject(id, autoPlay = false) {
   renderProjectList();
   // Auto-play if requested (e.g. playlist advance)
   if (autoPlay) play();
+  } finally {
+    isLoadingProject = false;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1585,19 +1592,22 @@ function saveSession() {
 }
 
 async function restoreSession() {
+  // Never restore if user already has tracks loaded — would wipe unsaved work
+  if (tracks.length > 0) return;
   try {
-    const raw=localStorage.getItem('playtracks_session'); if(!raw)return;
-    const session=JSON.parse(raw);
-    autoAdvance=session.autoAdvance||false;
-    document.getElementById('autoAdvToggle').classList.toggle('on',autoAdvance);
-    projects=session.projects||[];
-    document.getElementById('projCount').textContent=projects.length;
+    const raw = localStorage.getItem('playtracks_session');
+    if (!raw) return;
+    const session = JSON.parse(raw);
+    autoAdvance = session.autoAdvance || false;
+    document.getElementById('autoAdvToggle').classList.toggle('on', autoAdvance);
+    projects = session.projects || [];
+    document.getElementById('projCount').textContent = projects.length;
     renderProjectList();
-    if(session.currentProjectId) {
-      const rec=await dbGet('projects',session.currentProjectId);
-      if(rec) await loadProject(session.currentProjectId);
+    if (session.currentProjectId) {
+      const rec = await dbGet('projects', session.currentProjectId);
+      if (rec) await loadProject(session.currentProjectId);
     }
-  } catch(e){console.warn('Session restore failed',e);}
+  } catch(e) { console.warn('Session restore failed', e); }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1952,15 +1962,33 @@ document.getElementById('trackList').innerHTML=buildEmpty();
 
 // iOS Safari: page restored from bfcache (back/forward) without JS re-running
 window.addEventListener('pageshow', e => {
-  if (e.persisted && !tracks.length) {
-    openDB().then(() => restoreSession()).catch(() => {});
+  // persisted=true means page came from bfcache — JS state was fully preserved,
+  // but AudioContext may be suspended. Resume it, don't reload anything.
+  if (e.persisted) {
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    // If tracks somehow got wiped (very rare), try a full restore
+    if (!tracks.length && db) restoreSession().catch(() => {});
   }
 });
 
-// Android / iOS: app came back to foreground after being backgrounded
+// Android / iOS: came back to foreground
+// Only restore if we genuinely have nothing — NOT on every focus event
+let _wasHidden = false;
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && !tracks.length) {
-    openDB().then(() => restoreSession()).catch(() => {});
+  if (document.visibilityState === 'hidden') {
+    _wasHidden = true;
+    // Flush any pending state
+    saveSession();
+    return;
+  }
+  // visible — only act if page was hidden AND we have no tracks at all
+  if (_wasHidden) {
+    _wasHidden = false;
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    // Only trigger restore if tracks are genuinely gone AND db is open
+    if (!tracks.length && db && !isTransitioning) {
+      restoreSession().catch(() => {});
+    }
   }
 });
 </script>
