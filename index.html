@@ -258,52 +258,57 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
 .drop-zone p{font-size:17px;font-weight:700}
 .drop-zone small{color:var(--txt2);font-size:12px}
 
+.act-btn.active{background:rgba(255,61,90,.12);border-color:rgba(255,61,90,.4);color:var(--danger)}
+
 /* ════════════════════════════════════════════════════
    TABLET  (≤ 820px)
 ════════════════════════════════════════════════════ */
 @media (max-width: 820px) {
-  /* Header: hide Duração + SR, compacto */
+  /* Header: hide Duração + SR */
   .header-chips .chip:nth-child(n+3) { display: none; }
   header { padding: 10px 16px; }
 
-  /* Transport: wrapa em 2 linhas, sem separadores */
+  /* Transport: wrap, hide separators */
   .transport { flex-wrap: wrap; row-gap: 5px; padding: 8px 16px; }
   .transport .sep { display: none; }
   .mvol { margin-left: 0; }
 
-  /* Settings panel: 2 colunas */
+  /* Settings panel: 2 columns */
   .sp-inner { grid-template-columns: 1fr 1fr; }
   .sp-sec:last-child { grid-column: 1 / -1; }
 
-  /* Footer: permite quebrar linha nos botões */
+  /* Footer */
   footer { padding: 8px 16px; }
   .foot-acts { flex-wrap: wrap; gap: 5px; }
-  /* Altura real do viewport no iOS/Android */
+}
+
+/* ════════════════════════════════════════════════════
+   MOBILE  (≤ 520px)
+════════════════════════════════════════════════════ */
+@media (max-width: 520px) {
+  /* Real viewport height on iOS/Android */
   body { height: 100dvh; }
 
-  /* Header compacto */
+  /* Compact header */
   header { padding: 9px 12px; }
   .logo-sub { display: none; }
   .logo-text { font-size: 15px; }
-  /* Mostra só BPM e Faixas */
   .header-chips .chip:nth-child(n+3) { display: none; }
 
-  /* Transport: esconde pitch e vol (controles por faixa bastam),
-     aumenta áreas de toque */
+  /* Transport: hide pitch and master vol, increase touch targets */
   .transport { padding: 7px 12px; gap: 4px; }
   .pitch-ctrl { display: none; }
   .mvol { display: none; }
   .btn-play { width: 44px; height: 44px; }
   .tbtn-t { width: 36px; height: 36px; }
   .time-d { min-width: 72px; font-size: 11px; }
-  /* Import: só ícone no mobile */
   #btnImport .btn-lbl { display: none; }
   .act-btn.primary { height: 34px; padding: 0 10px; }
 
-  /* Timeline menor */
+  /* Smaller timeline */
   .master-tl { height: 54px; }
 
-  /* Faixa: coluna de info mais estreita, esconde extras */
+  /* Track row: narrower info column, hide extras */
   .track-row { grid-template-columns: 4px minmax(88px,130px) 50px 1fr 28px; min-height: 58px; }
   .track-info { padding: 0 8px; }
   .track-nm { font-size: 11px; }
@@ -311,30 +316,30 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
   .track-tp { display: none; }
   .track-main { padding: 0 6px; gap: 5px; }
   .vol-grp { min-width: 68px; }
-  .meters { display: none; }   /* VU meter escondido, economiza espaço */
+  .meters { display: none; }
   .qbtn { width: 28px; height: 28px; }
 
-  /* Painel de settings: 1 coluna */
+  /* Settings panel: 1 column */
   .sp-inner { grid-template-columns: 1fr; }
   .sp-sec:last-child { grid-column: auto; }
 
-  /* Footer: empilha status + botões */
+  /* Footer: stack status + buttons vertically */
   footer { padding: 8px 12px; flex-direction: column; align-items: flex-start; gap: 6px; }
   .foot-acts { flex-wrap: wrap; gap: 5px; width: 100%; }
   .act-btn { height: 32px; padding: 0 8px; font-size: 10px; }
 
-  /* Botão flutuante de projetos: sobe acima do footer mais alto */
-  .float-proj { bottom: 106px; right: 12px; width: 42px; height: 42px; }
-  .float-new  { bottom: 158px; right: 12px; width: 42px; height: 42px; }
+  /* Float buttons: lift above taller footer (~100px) */
+  .float-proj { bottom: 110px; right: 12px; width: 42px; height: 42px; }
+  .float-new  { bottom: 162px; right: 12px; width: 42px; height: 42px; }
 
-  /* Gaveta de projetos: largura total */
+  /* Full-width drawer */
   .proj-drawer { width: 100%; }
 
-  /* Modal: borda a borda */
+  /* Edge-to-edge modal */
   .modal { width: calc(100vw - 24px); padding: 18px; gap: 13px; }
   .modal h3 { font-size: 14px; }
 
-  /* Barra de mapeamento: pílulas quebram linha */
+  /* Section mapping bar: pills wrap */
   .map-section-bar.visible { max-height: 90px; flex-wrap: wrap; row-gap: 4px; padding: 7px 12px; }
   .map-section-bar .sec-pill { font-size: 8px; height: 18px; padding: 0 7px; }
 }
@@ -367,8 +372,6 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
   </div>
 </header>
 
-
-
 <!-- Transport -->
 <div class="transport">
   <div style="display:flex;gap:3px;align-items:center">
@@ -379,7 +382,7 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
   <div class="sep"></div>
   <div style="display:flex;gap:3px">
     <button class="tbtn-t" id="btnLoop"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></button>
-    <button class="tbtn-t" id="btnMetro"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 2 21 22 21"/><line x1="12" y1="9" x2="15" y2="18"/></svg></button>
+    <button class="tbtn-t" id="btnMetro" title="Metrônomo (em breve)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 2 21 22 21"/><line x1="12" y1="9" x2="15" y2="18"/></svg></button>
   </div>
   <div class="sep"></div>
   <div class="time-d" id="timeDisp">00:00.00</div>
@@ -423,7 +426,6 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
     </button>
     <button class="map-btn" id="btnDoneMap" style="display:none">Concluir</button>
   </div>
-  <div class="sec-palette" id="secPaletteOld" style="display:none"></div>
 </div>
 
 <!-- Section mapping bar – fora da timeline para evitar bugs de propagação de clique -->
@@ -641,7 +643,8 @@ function startSources() {
     src.loop = loopEnabled;
     src.playbackRate.value = ratio;
     src.connect(n.gn);
-    src.start(0, Math.min(pauseOffset, track.buffer.duration - 0.01));
+    const offset = Math.max(0, Math.min(pauseOffset, track.buffer.duration - 0.001));
+    src.start(0, offset);
     n.source = src;
     // No onended — anim() is the single authoritative end detector
   });
@@ -657,21 +660,21 @@ function play() {
   document.getElementById('btnPlay').classList.add('playing');
   document.getElementById('playIcon').innerHTML = '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>';
   setSt('Reproduzindo','var(--accent)');
+  _rebuildMeterCache();
   anim();
-  renderProjectList(); // show now-playing dot in drawer
+  if (document.getElementById('projDrawer').classList.contains('open')) renderProjectList();
 }
 
 function pause() {
   if (!audioCtx) return;
-  // Only update pauseOffset if we were actually playing — avoids corruption when audioCtx is suspended
-  if (isPlaying) pauseOffset = audioCtx.currentTime - startTime;
+  if (isPlaying) pauseOffset = Math.max(0, audioCtx.currentTime - startTime);
   tracks.forEach(t => { const n=trackNodes[t.id]; if(n&&n.source){try{n.source.stop()}catch(e){}; n.source=null;} });
   isPlaying = false; cancelAnimationFrame(animId);
   document.getElementById('btnPlay').classList.remove('playing');
   document.getElementById('playIcon').innerHTML = '<path d="M5 3l14 9-14 9V3z"/>';
   setSt('Pausado','var(--warn)');
   tracks.forEach(t => drawStaticWave(t.id));
-  renderProjectList(); // remove now-playing dot
+  if (document.getElementById('projDrawer').classList.contains('open')) renderProjectList();
 }
 
 function stop() { pause(); pauseOffset=0; movePH(0); updT(0); setSt('Parado','var(--txt3)'); }
@@ -778,14 +781,36 @@ function updT(s) { const m=Math.floor(s/60),sc=Math.floor(s%60),cs=Math.floor((s
 function p2(n){ return String(n).padStart(2,'0'); }
 function setSt(t,c){ document.getElementById('statusTxt').textContent=t; document.getElementById('sdot').style.background=c; }
 
+// Debounced composite render — avoids hammering OfflineAudioContext on rapid mute/vol changes
+let _compositeDebounceTimer = null;
+function scheduleComposite() {
+  clearTimeout(_compositeDebounceTimer);
+  _compositeDebounceTimer = setTimeout(() => renderCompositeMix(), 600);
+}
+
+// Cached meter fill elements — rebuilt when tracks change
+let _meterCache = {};
+function _rebuildMeterCache() {
+  _meterCache = {};
+  tracks.forEach(t => {
+    _meterCache[t.id] = Array.from(document.querySelectorAll('.mfill-' + t.id));
+  });
+}
+
 function drawMeters() {
   tracks.forEach(t => {
-    const n=trackNodes[t.id]; let lv=0;
-    if (n&&n.an&&!t.muted) { const b=new Uint8Array(n.an.frequencyBinCount); n.an.getByteFrequencyData(b); lv=Math.min(1,(b.reduce((a,x)=>a+x,0)/b.length/255)*3+Math.random()*.08); }
-    document.querySelectorAll('.mfill-'+t.id).forEach((bar,i)=>{
-      const ch=lv*(1-i*.08)*(Math.random()*.18+.9);
-      bar.style.height=(ch*100)+'%';
-      bar.style.background=ch>.82?'#FF3D5A':ch>.62?'#FFD020':t.hex;
+    const n = trackNodes[t.id]; let lv = 0;
+    if (n && n.an && !t.muted) {
+      const b = new Uint8Array(n.an.frequencyBinCount);
+      n.an.getByteFrequencyData(b);
+      lv = Math.min(1, (b.reduce((a,x) => a+x, 0) / b.length / 255) * 3 + Math.random() * .08);
+    }
+    const bars = _meterCache[t.id];
+    if (!bars) return;
+    bars.forEach((bar, i) => {
+      const ch = lv * (1 - i * .08) * (Math.random() * .18 + .9);
+      bar.style.height = (ch * 100) + '%';
+      bar.style.background = ch > .82 ? '#FF3D5A' : ch > .62 ? '#FFD020' : t.hex;
     });
   });
 }
@@ -797,7 +822,7 @@ function isAudioFile(f) {
   if (f.type && f.type.startsWith('audio')) return true;
   if (f.type && (f.type==='video/mp4'||f.type==='video/3gpp')) return true;
   if (AUDIO_EXTS.test(f.name)) return true;
-  if (!f.type) return true;
+  // Only accept typeless files if extension matches — never blindly accept all
   return false;
 }
 
@@ -806,11 +831,12 @@ async function loadFiles(files) {
   if (isPlaying) pause();
   const good = Array.from(files).filter(isAudioFile);
   if (!good.length) { setSt('Formato não reconhecido — use WAV, MP3, M4A, FLAC','var(--danger)'); return; }
+  if (!currentProjectId) currentProjectId = 'autosave_' + Date.now();
   for (const f of good) await addTrackFromFile(f);
-  await renderCompositeMix();
   updateChips();
-  // Auto-backup so mobile page reloads can restore without user having to save manually
-  await autoBackup();
+  _drawApproxComposite();
+  setTimeout(() => renderCompositeMix(), 0);
+  await _flushProjectMeta();
 }
 
 async function addTrackFromFile(file) {
@@ -837,13 +863,44 @@ async function addTrackFromFile(file) {
     showTrackLoad(track.id, false);
     drawStaticWave(track.id);
     countSt();
-    
+    _rebuildMeterCache(); // keep meter cache in sync
+    // ── Save this track to IndexedDB immediately ──
+    await _saveTrackAudio(track);
+    await _flushProjectMeta();
   } catch(err) {
     showTrackLoad(track.id, false);
     const fe = document.getElementById('tfile-'+track.id);
     if (fe) { fe.textContent='formato não suportado'; fe.style.color='var(--danger)'; }
     setSt('Erro ao decodificar "'+file.name+'"','var(--danger)');
   }
+}
+
+// Save a single track's audio data to IndexedDB
+async function _saveTrackAudio(track) {
+  if (!track.buffer || !db || !currentProjectId) return;
+  try {
+    const channels = [];
+    for (let c = 0; c < track.buffer.numberOfChannels; c++) {
+      channels.push(track.buffer.getChannelData(c).slice());
+    }
+    const key = `${currentProjectId}_${track.id}`;
+    await dbPut('audio', { key, channels, sampleRate: track.buffer.sampleRate, length: track.buffer.length });
+    _savedAudioKeys.add(key); // mark as saved so autoBackup skips it next time
+  } catch(e) { console.warn('Track audio save failed:', e); }
+}
+
+// Flush current project metadata (no audio) to IndexedDB + localStorage
+async function _flushProjectMeta() {
+  if (!db || !currentProjectId) { saveSession(); return; }
+  try {
+    const proj = buildProjectObj();
+    await dbPut('projects', proj);
+    const idx = projects.findIndex(p => p.id === proj.id);
+    if (idx >= 0) projects[idx] = proj; else projects.push(proj);
+    saveSession();
+    renderProjectList();
+    document.getElementById('projCount').textContent = projects.length;
+  } catch(e) { console.warn('Metadata flush failed:', e); saveSession(); }
 }
 
 function cacheWave(track, buf) {
@@ -867,8 +924,30 @@ function countSt() {
   else setSt(n+'/'+tot+' faixas decodificadas','var(--warn)');
 }
 
+// Fast approximate composite: sums cached per-track peaks — no OfflineAudioContext needed
+// Used immediately on load so the timeline shows something while the real mix renders in background
+function _drawApproxComposite() {
+  const activeTracks = tracks.filter(t => t.waveformCache && !t.muted);
+  if (!activeTracks.length) { drawMasterWaveform(); return; }
+  const pts = 2048;
+  const approx = new Float32Array(pts);
+  activeTracks.forEach(t => {
+    const src = t.waveformCache; // 1024 pts
+    const ratio = src.length / pts;
+    for (let i = 0; i < pts; i++) {
+      approx[i] = Math.min(1, approx[i] + (src[Math.floor(i * ratio)] || 0) * (t.vol / 100));
+    }
+  });
+  // Normalize — avoid Math.max(...largeArray) stack overflow
+  let max = 0.001;
+  for (let i = 0; i < pts; i++) if (approx[i] > max) max = approx[i];
+  for (let i = 0; i < pts; i++) approx[i] /= max;
+  masterPeaks = approx;
+  drawMasterWaveform();
+}
+
 // ═══════════════════════════════════════════════════════════════
-// COMPOSITE MASTER WAVEFORM
+// COMPOSITE MASTER WAVEFORM (runs in background after load)
 // ═══════════════════════════════════════════════════════════════
 async function renderCompositeMix() {
   if (!audioCtx || !tracks.some(t=>t.buffer) || DURATION===0) return;
@@ -960,45 +1039,44 @@ function drawMasterWaveform() {
 // SECTION MAPPING
 // ═══════════════════════════════════════════════════════════════
 function drawSectionsOverlay() {
-  const cv=document.getElementById('tlSections');
-  const tl=document.getElementById('masterTl');
-  const W=tl.clientWidth, H=tl.clientHeight;
-  cv.width=W; cv.height=H;
-  const cx=cv.getContext('2d');
-  cx.clearRect(0,0,W,H);
+  const cv = document.getElementById('tlSections');
+  const tl = document.getElementById('masterTl');
+  const W = tl.clientWidth, H = tl.clientHeight;
+  // Only reset canvas size if dimensions changed — avoids flicker on every drag frame
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const cx = cv.getContext('2d');
+  cx.clearRect(0, 0, W, H);
 
-  // Draw section regions
-  const sorted=[...sections].sort((a,b)=>a.pos-b.pos);
-  for(let i=0;i<sorted.length;i++){
-    const sec=sorted[i];
-    const x=sec.pos*W;
-    const nextX=i<sorted.length-1?sorted[i+1].pos*W:W;
+  const sorted = [...sections].sort((a, b) => a.pos - b.pos);
+  for (let i = 0; i < sorted.length; i++) {
+    const sec = sorted[i];
+    const x = sec.pos * W;
+    const nextX = i < sorted.length - 1 ? sorted[i+1].pos * W : W;
     // Region fill
-    cx.fillStyle=sec.color+'20';
-    cx.fillRect(x,0,nextX-x,H-14);
+    cx.fillStyle = sec.color + '20';
+    cx.fillRect(x, 0, nextX - x, H - 14);
     // Vertical line
-    cx.strokeStyle=sec.color+'CC';
-    cx.lineWidth=2;
-    cx.beginPath(); cx.moveTo(x,0); cx.lineTo(x,H-14); cx.stroke();
+    cx.strokeStyle = sec.color + 'CC';
+    cx.lineWidth = 2;
+    cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H - 14); cx.stroke();
     // Handle knob
-    cx.fillStyle=sec.color;
-    cx.beginPath(); cx.arc(x,H-14,6,0,Math.PI*2); cx.fill();
-    // Label
-    cx.fillStyle='#fff';
-    cx.font='bold 9px Syne,sans-serif';
-    cx.textAlign='left';
-    cx.fillText(sec.label, x+4, H-18);
-    cx.textAlign='left';
+    cx.fillStyle = sec.color;
+    cx.beginPath(); cx.arc(x, H - 14, 6, 0, Math.PI * 2); cx.fill();
+    // Label — clamp so it never renders off-screen
+    cx.fillStyle = '#fff';
+    cx.font = 'bold 9px Syne,sans-serif';
+    cx.textAlign = 'left';
+    const labelX = Math.min(x + 4, W - 40);
+    cx.fillText(sec.label, labelX, H - 18);
   }
 
-  // Mapping mode: show crosshair guide
+  // Mapping mode: dashed guide line
   if (mappingMode) {
-    cx.strokeStyle='rgba(180,195,220,.3)';
-    cx.lineWidth=1;
-    cx.setLineDash([4,6]);
-    cx.beginPath(); cx.moveTo(0,H/2); cx.lineTo(W,H/2); cx.stroke();
+    cx.strokeStyle = 'rgba(180,195,220,.3)';
+    cx.lineWidth = 1;
+    cx.setLineDash([4, 6]);
+    cx.beginPath(); cx.moveTo(0, H/2); cx.lineTo(W, H/2); cx.stroke();
     cx.setLineDash([]);
-    // hint text is now shown in the map-section-bar below the timeline
   }
 }
 
@@ -1013,8 +1091,13 @@ function setupMappingPalette() {
     btn.className='sec-pill'+(selectedSecType===sec.id?' selected':'');
     btn.style.background=sec.color+'30'; btn.style.color=sec.color; btn.style.borderColor=sec.color+'60';
     btn.textContent=sec.label;
+    btn.setAttribute('role','button');
+    btn.setAttribute('tabindex','0');
+    btn.title = sec.label;
     btn.onmousedown=e=>e.stopPropagation();
-    btn.onclick=()=>{selectedSecType=selectedSecType===sec.id?null:sec.id;setupMappingPalette();};
+    const toggle = () => { selectedSecType=selectedSecType===sec.id?null:sec.id; setupMappingPalette(); };
+    btn.onclick=toggle;
+    btn.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(); } };
     pal.appendChild(btn);
   });
   const hint=document.createElement('span');
@@ -1123,16 +1206,35 @@ function updateGain(id){
   const anySolo=tracks.some(t=>t.soloed);
   n.gn.gain.setTargetAtTime((!track.muted&&(!anySolo||track.soloed))?track.vol/100:0,audioCtx.currentTime,.015);
 }
-function toggleMute(id,e){e.stopPropagation();const t=tracks.find(x=>x.id===id);if(!t)return;t.muted=!t.muted;document.getElementById('mute-'+id).classList.toggle('muted',t.muted);updateGain(id);renderCompositeMix();
-  // keep toggle-all button state consistent
+function toggleMute(id,e){
+  e.stopPropagation();
+  const t=tracks.find(x=>x.id===id); if(!t)return;
+  t.muted=!t.muted;
+  document.getElementById('mute-'+id).classList.toggle('muted',t.muted);
+  updateGain(id);
+  _drawApproxComposite();
+  scheduleComposite();
+  // Sync toggle-all button state
   allMuted=tracks.length>0&&tracks.every(x=>x.muted);
-  const lbl=document.getElementById('toggleMuteLbl');const ic=document.getElementById('toggleMuteIcon');const btn=document.getElementById('btnToggleMute');
-  if(lbl){lbl.textContent=allMuted?'Ativar tudo':'Silenciar tudo';}
-  if(ic){ic.innerHTML=allMuted?'<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>':'<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/>';}
-  if(btn)btn.classList.toggle('active',allMuted);
+  const lbl=document.getElementById('toggleMuteLbl');
+  const ic=document.getElementById('toggleMuteIcon');
+  const btn=document.getElementById('btnToggleMute');
+  if(lbl) lbl.textContent=allMuted?'Ativar tudo':'Silenciar tudo';
+  if(ic) ic.innerHTML=allMuted
+    ?'<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>'
+    :'<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/>';
+  if(btn) btn.classList.toggle('active',allMuted);
 }
 function toggleSolo(id,e){e.stopPropagation();const t=tracks.find(x=>x.id===id);if(!t)return;t.soloed=!t.soloed;document.getElementById('solo-'+id).classList.toggle('soloed',t.soloed);tracks.forEach(tr=>updateGain(tr.id));}
-function setVol(id,val){const t=tracks.find(x=>x.id===id);if(!t)return;t.vol=parseInt(val);document.getElementById('volval-'+id).textContent=val;fillSlider(document.getElementById('vol-'+id),t.hex);updateGain(id);}
+function setVol(id,val){
+  const t=tracks.find(x=>x.id===id); if(!t)return;
+  t.vol=parseInt(val);
+  document.getElementById('volval-'+id).textContent=val;
+  fillSlider(document.getElementById('vol-'+id),t.hex);
+  updateGain(id);
+  _drawApproxComposite();
+  scheduleComposite();
+}
 function setPan(id,val){
   const v=parseInt(val),t=tracks.find(x=>x.id===id);if(!t)return;
   t.pan=v;document.getElementById('panval-'+id).textContent=v===0?'C':v>0?'R'+v:'L'+Math.abs(v);
@@ -1169,16 +1271,19 @@ function removeTrack(id) {
   closeDD();
   destroyChain(id);
   tracks = tracks.filter(t => t.id !== id);
+  delete _meterCache[id]; // remove from meter cache
   const bl = document.getElementById('block-'+id); if(bl) bl.remove();
   DURATION = tracks.reduce((mx,t) => t.buffer ? Math.max(mx, t.buffer.duration) : mx, 0);
   updateChips(); countSt();
-  // Re-render composite without stopping other tracks
-  renderCompositeMix();
+  _drawApproxComposite();
+  scheduleComposite();
   if (!tracks.length) {
     if (isPlaying) { isPlaying = false; cancelAnimationFrame(animId); document.getElementById('btnPlay').classList.remove('playing'); document.getElementById('playIcon').innerHTML = '<path d="M5 3l14 9-14 9V3z"/>'; }
     document.getElementById('trackList').innerHTML = buildEmpty();
+    masterPeaks = null;
+    drawMasterWaveform();
   }
-  autoBackup();
+  _flushProjectMeta().catch(() => saveSession());
 }
 
 function startEditName(id,e) {
@@ -1322,7 +1427,7 @@ function setPitch(val) {
   const sign = currentPitch > 0 ? '+' : '';
   document.getElementById('pitchVal').textContent = sign + currentPitch;
   fillSlider(document.getElementById('pitchSlider'),'var(--accent)',true);
-  // Apply to all running sources (does NOT affect metronome/guide)
+  if (!audioCtx) return; // not yet initialised — playback rate applied when play() starts
   tracks.forEach(t => {
     const n = trackNodes[t.id];
     if (n && n.source) n.source.playbackRate.setTargetAtTime(ratio, audioCtx.currentTime, 0.01);
@@ -1334,16 +1439,17 @@ function setPitch(val) {
 // ═══════════════════════════════════════════════════════════════
 function buildProjectObj() {
   return {
-    id: currentProjectId || ('proj_'+Date.now()),
+    id: currentProjectId, // caller must ensure this is set before calling
     name: currentProjectMeta.name || 'Sem título',
     artist: currentProjectMeta.artist || 'Artista desconhecido',
     photo: currentProjectMeta.photo || null,
-    bpm: parseInt(document.getElementById('bpmInput').value)||120,
+    bpm: parseInt(document.getElementById('bpmInput').value) || 120,
     duration: DURATION,
     sections,
-    tracks: tracks.map(t=>({
-      id:t.id, name:t.name, hex:t.hex, fileName:t.fileName,
-      vol:t.vol, pan:t.pan, phase:t.phase, muted:t.muted, soloed:t.soloed, eq:t.eq, sends:t.sends
+    tracks: tracks.map(t => ({
+      id: t.id, name: t.name, hex: t.hex, fileName: t.fileName,
+      vol: t.vol, pan: t.pan, phase: t.phase, muted: t.muted, soloed: t.soloed,
+      eq: t.eq, sends: t.sends
     }))
   };
 }
@@ -1352,82 +1458,104 @@ async function saveProject() {
   if (!tracks.length) { setSt('Nenhuma faixa para salvar','var(--danger)'); return; }
   setSt('Salvando projeto...','var(--warn)');
   try {
-    const proj = buildProjectObj();
-    currentProjectId = proj.id;
-    await dbPut('projects', proj);
+    // Ensure we have a stable ID
+    if (!currentProjectId) currentProjectId = 'proj_' + Date.now();
+    // Save audio for every track (overwrites with latest data)
     for (const track of tracks) {
       if (!track.buffer) continue;
-      // Store Float32Array directly — much faster and smaller than Array.from()
-      const channels = [];
-      for (let c = 0; c < track.buffer.numberOfChannels; c++) {
-        channels.push(track.buffer.getChannelData(c).slice());
-      }
-      await dbPut('audio', {key:`${proj.id}_${track.id}`, channels, sampleRate:track.buffer.sampleRate, length:track.buffer.length});
+      await _saveTrackAudio(track);
     }
-    const existing=projects.findIndex(p=>p.id===proj.id);
-    if(existing>=0)projects[existing]=proj; else projects.push(proj);
-    saveSession();
-    renderProjectList();
-    document.getElementById('projCount').textContent=projects.length;
-    setSt('Projeto "'+proj.name+'" salvo','var(--ok)');
+    await _flushProjectMeta();
+    setSt('Projeto "' + currentProjectMeta.name + '" salvo','var(--ok)');
   } catch(err) {
-    setSt('Erro ao salvar: '+err.message,'var(--danger)');
+    setSt('Erro ao salvar: ' + err.message,'var(--danger)');
     console.error('saveProject error:', err);
   }
 }
 
 async function loadProject(id, autoPlay = false) {
-  if (isLoadingProject) return; // prevent double-load
+  if (isLoadingProject) return;
   isLoadingProject = true;
   try {
-  const proj = await dbGet('projects', id);
-  if (!proj) { setSt('Projeto não encontrado','var(--danger)'); return; }
-  if (isPlaying) pause();
-  // Clear current state
-  tracks.forEach(t=>destroyChain(t.id));
-  tracks=[]; nextId=1; DURATION=0; pauseOffset=0; masterPeaks=null;
-  document.getElementById('trackList').innerHTML='';
-  trackNodes={};
-  // Reset mute state
-  allMuted = false;
-  document.getElementById('toggleMuteLbl').textContent = 'Silenciar tudo';
-  document.getElementById('toggleMuteIcon').innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/>';
-  document.getElementById('btnToggleMute').classList.remove('active');
-  initAudio();
-  currentProjectId = proj.id;
-  currentProjectMeta = {name:proj.name, artist:proj.artist, photo:proj.photo||null};
-  sections = proj.sections||[];
-  document.getElementById('bpmInput').value = proj.bpm||120;
-  setSt('Carregando "'+proj.name+'"...','var(--warn)');
-  // Load audio for each track
-  for (const tInfo of (proj.tracks||[])) {
-    const audioRec = await dbGet('audio', `${proj.id}_${tInfo.id}`);
-    const track = {
-      id:nextId++, name:tInfo.name, hex:tInfo.hex, fileName:tInfo.fileName,
-      buffer:null, waveformCache:null,
-      muted:tInfo.muted||false, soloed:tInfo.soloed||false, vol:tInfo.vol||80,
-      pan:tInfo.pan||0, phase:tInfo.phase||false, settingsOpen:false,
-      eq:tInfo.eq||{low:{gain:0,freq:80},mid:{gain:0,freq:1000,q:1},high:{gain:0,freq:8000}},
-      sends:tInfo.sends||{reverb:0,delay:0}
-    };
-    tracks.push(track);
-    renderTrackEl(track);
-    if (audioRec) {
+    const proj = await dbGet('projects', id);
+    if (!proj) { setSt('Projeto não encontrado','var(--danger)'); return; }
+    if (isPlaying) pause();
+
+    // ── Clear state ──
+    tracks.forEach(t => destroyChain(t.id));
+    tracks = []; nextId = 1; DURATION = 0; pauseOffset = 0; masterPeaks = null;
+    document.getElementById('trackList').innerHTML = '';
+    trackNodes = {};
+    _savedAudioKeys.clear(); // reset so new project's tracks get saved correctly
+    allMuted = false;
+    document.getElementById('toggleMuteLbl').textContent = 'Silenciar tudo';
+    document.getElementById('toggleMuteIcon').innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/>';
+    document.getElementById('btnToggleMute').classList.remove('active');
+    initAudio();
+    currentProjectId = proj.id;
+    currentProjectMeta = { name: proj.name, artist: proj.artist, photo: proj.photo||null };
+    sections = proj.sections || [];
+    document.getElementById('bpmInput').value = proj.bpm || 120;
+    setSt('Carregando "' + proj.name + '"...', 'var(--warn)');
+
+    const tInfos = proj.tracks || [];
+
+    // ── Step 1: Render track UI shells immediately (instant) ──
+    tInfos.forEach(tInfo => {
+      const track = {
+        id: nextId++, name: tInfo.name, hex: tInfo.hex, fileName: tInfo.fileName,
+        buffer: null, waveformCache: null,
+        muted: tInfo.muted||false, soloed: tInfo.soloed||false, vol: tInfo.vol||80,
+        pan: tInfo.pan||0, phase: tInfo.phase||false, settingsOpen: false,
+        eq: tInfo.eq||{low:{gain:0,freq:80},mid:{gain:0,freq:1000,q:1},high:{gain:0,freq:8000}},
+        sends: tInfo.sends||{reverb:0,delay:0}
+      };
+      tracks.push(track);
+      renderTrackEl(track);
+      showTrackLoad(track.id, true);
+    });
+
+    // ── Step 2: Read ALL track audio from IndexedDB in parallel ──
+    const audioRecs = await Promise.all(
+      tInfos.map(tInfo => dbGet('audio', `${proj.id}_${tInfo.id}`).catch(() => null))
+    );
+
+    // ── Step 3: Build AudioBuffers (fast — just memory copy, no decode) ──
+    audioRecs.forEach((audioRec, i) => {
+      const track = tracks[i];
+      if (!audioRec || !audioRec.channels || !audioRec.channels.length) {
+        showTrackLoad(track.id, false);
+        return;
+      }
       const buf = audioCtx.createBuffer(audioRec.channels.length, audioRec.length, audioRec.sampleRate);
-      audioRec.channels.forEach((ch,i)=>buf.copyToChannel(ch instanceof Float32Array?ch:new Float32Array(ch),i));
-      track.buffer=buf;
-      DURATION=Math.max(DURATION,buf.duration);
-      cacheWave(track,buf);
-      requestAnimationFrame(()=>drawStaticWave(track.id));
-    }
-  }
-  await renderCompositeMix();
-  updateChips(); countSt();
-  drawSectionsOverlay();
-  saveSession();
-  renderProjectList();
-  // Auto-play if requested (e.g. playlist advance)
-  if (autoPlay) play();
+      audioRec.channels.forEach((ch, c) =>
+        buf.copyToChannel(ch instanceof Float32Array ? ch : new Float32Array(ch), c)
+      );
+      track.buffer = buf;
+      DURATION = Math.max(DURATION, buf.duration);
+      cacheWave(track, buf);
+      showTrackLoad(track.id, false);
+      // Mark audio as already in DB so autoBackup skips re-saving
+      _savedAudioKeys.add(`${proj.id}_${track.id}`);
+      requestAnimationFrame(() => drawStaticWave(track.id));
+    });
+
+    updateChips(); countSt();
+    _rebuildMeterCache();
+    drawSectionsOverlay();
+    saveSession();
+    renderProjectList();
+
+    // ── Step 4: Draw fast approximate composite from cached peaks (instant) ──
+    _drawApproxComposite();
+
+    // ── Step 5: Start playback immediately if requested ──
+    if (autoPlay) play();
+
+    // ── Step 6: Render proper composite waveform in background ──
+    // Does NOT block playback — fires after current call stack clears
+    setTimeout(() => renderCompositeMix(), 0);
+
   } finally {
     isLoadingProject = false;
   }
@@ -1455,10 +1583,11 @@ async function exportPtracks() {
     }
 
     setSt('Gerando arquivo...','var(--warn)');
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise(r => setTimeout(r, 0)); // yield before heavy JSON serialisation
 
     const exportObj = { ...proj, audioRaw, exportedAt: new Date().toISOString(), version: '2.0' };
-    const json = JSON.stringify(exportObj);
+    // Stringify in a yielded microtask so UI stays responsive
+    const json = await new Promise(r => setTimeout(() => r(JSON.stringify(exportObj)), 0));
     const blob = new Blob([json], { type: 'application/json' });
 
     if (window.showSaveFilePicker) {
@@ -1502,6 +1631,7 @@ async function importPtracks(file) {
     tracks=[]; nextId=1; DURATION=0; pauseOffset=0; masterPeaks=null;
     document.getElementById('trackList').innerHTML='';
     trackNodes={};
+    _savedAudioKeys.clear();
     // Reset mute state
     allMuted = false;
     document.getElementById('toggleMuteLbl').textContent = 'Silenciar tudo';
@@ -1521,23 +1651,42 @@ async function importPtracks(file) {
       if (proj.audioRaw && proj.audioRaw[tInfo.id]) {
         // New Float32 format — fast, no decode step
         showTrackLoad(track.id, true);
-        const raw = proj.audioRaw[tInfo.id];
-        const buf = audioCtx.createBuffer(raw.channels.length, raw.length, raw.sampleRate);
-        raw.channels.forEach((b64, i) => {
-          buf.copyToChannel(new Float32Array(base64ToArrayBuffer(b64)), i);
-        });
-        track.buffer = buf; DURATION = Math.max(DURATION, buf.duration);
-        cacheWave(track, buf); showTrackLoad(track.id, false); drawStaticWave(track.id);
+        try {
+          const raw = proj.audioRaw[tInfo.id];
+          if (!raw.channels || !raw.channels.length) throw new Error('channels empty');
+          const buf = audioCtx.createBuffer(raw.channels.length, raw.length, raw.sampleRate);
+          raw.channels.forEach((b64, i) => {
+            buf.copyToChannel(new Float32Array(base64ToArrayBuffer(b64)), i);
+          });
+          track.buffer = buf; DURATION = Math.max(DURATION, buf.duration);
+          cacheWave(track, buf); drawStaticWave(track.id);
+        } catch(err) {
+          const fe = document.getElementById('tfile-'+track.id);
+          if (fe) { fe.textContent = 'áudio corrompido'; fe.style.color = 'var(--danger)'; }
+        } finally { showTrackLoad(track.id, false); }
       } else if (proj.audioData && proj.audioData[tInfo.id]) {
         // Legacy WAV format — backward compat
-        showTrackLoad(track.id,true);
-        const ab = base64ToArrayBuffer(proj.audioData[tInfo.id]);
-        const buf = await new Promise((r,j)=>audioCtx.decodeAudioData(ab.slice(0),r,j));
-        track.buffer=buf; DURATION=Math.max(DURATION,buf.duration);
-        cacheWave(track,buf); showTrackLoad(track.id,false); drawStaticWave(track.id);
+        showTrackLoad(track.id, true);
+        try {
+          const ab = base64ToArrayBuffer(proj.audioData[tInfo.id]);
+          const buf = await new Promise((r,j)=>audioCtx.decodeAudioData(ab.slice(0),r,j));
+          track.buffer=buf; DURATION=Math.max(DURATION,buf.duration);
+          cacheWave(track,buf); drawStaticWave(track.id);
+        } catch(err) {
+          const fe = document.getElementById('tfile-'+track.id);
+          if (fe) { fe.textContent = 'formato inválido'; fe.style.color = 'var(--danger)'; }
+        } finally { showTrackLoad(track.id, false); }
+      } else {
+        // No audio data — mark and dismiss spinner
+        showTrackLoad(track.id, false);
+        const fe = document.getElementById('tfile-'+track.id);
+        if (fe) { fe.textContent = 'sem áudio'; fe.style.color = 'var(--txt3)'; }
       }
     }
-    await renderCompositeMix(); updateChips(); countSt();
+    updateChips(); countSt();
+    _rebuildMeterCache();
+    _drawApproxComposite();
+    setTimeout(() => renderCompositeMix(), 0);
     drawSectionsOverlay();
     await autoBackup();
     setSt('Projeto "'+proj.name+'" importado com sucesso','var(--ok)');
@@ -1555,40 +1704,44 @@ function arrayBufferToBase64(buf){
 function base64ToArrayBuffer(b64){const bin=atob(b64);const b=new ArrayBuffer(bin.length);const v=new Uint8Array(b);for(let i=0;i<bin.length;i++)v[i]=bin.charCodeAt(i);return b;}
 
 // ═══════════════════════════════════════════════════════════════
-// SESSION PERSISTENCE
-// ═══════════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
 // AUTO-BACKUP (mobile page-eviction protection)
 // ═══════════════════════════════════════════════════════════════
+// Set of audio keys already persisted in this session — avoids redundant dbGet checks
+const _savedAudioKeys = new Set();
+
 async function autoBackup() {
   if (!tracks.length || !db) { saveSession(); return; }
-  // Assign a stable ID if the user hasn't saved yet
   if (!currentProjectId) currentProjectId = 'autosave_' + Date.now();
-  try {
-    const proj = buildProjectObj();
-    await dbPut('projects', proj);
-    for (const track of tracks) {
-      if (!track.buffer) continue;
-      const channels = [];
-      for (let c = 0; c < track.buffer.numberOfChannels; c++) {
-        channels.push(track.buffer.getChannelData(c).slice());
-      }
-      await dbPut('audio', {key:`${proj.id}_${track.id}`, channels, sampleRate:track.buffer.sampleRate, length:track.buffer.length});
-    }
-    const idx = projects.findIndex(p => p.id === proj.id);
-    if (idx >= 0) projects[idx] = proj; else projects.push(proj);
-    saveSession();
-    renderProjectList();
-    document.getElementById('projCount').textContent = projects.length;
-  } catch(e) {
-    console.warn('Auto-backup failed:', e);
-    saveSession();
+  for (const track of tracks) {
+    if (!track.buffer) continue;
+    const key = `${currentProjectId}_${track.id}`;
+    if (_savedAudioKeys.has(key)) continue; // already saved this session
+    await _saveTrackAudio(track);
+    // _saveTrackAudio adds to _savedAudioKeys on success
   }
+  await _flushProjectMeta();
 }
 
 function saveSession() {
-  const session={currentProjectId,autoAdvance,projects:projects.map(p=>({id:p.id,name:p.name,artist:p.artist,photo:p.photo,bpm:p.bpm,duration:p.duration,trackCount:(p.tracks||[]).length}))};
-  try{localStorage.setItem('playtracks_session',JSON.stringify(session));}catch(e){}
+  // Strip photo from localStorage entries — photos can be MB-sized and cause QuotaExceededError.
+  // The full photo is stored in IndexedDB (in the project record) and restored from there.
+  const session = {
+    currentProjectId,
+    autoAdvance,
+    projects: projects.map(p => ({
+      id: p.id, name: p.name, artist: p.artist,
+      photo: null, // never persist photo in localStorage
+      bpm: p.bpm, duration: p.duration,
+      trackCount: (p.tracks||[]).length
+    }))
+  };
+  try { localStorage.setItem('playtracks_session', JSON.stringify(session)); } catch(e) {
+    // If still quota-exceeded (many projects), save minimal version
+    try {
+      const minimal = { currentProjectId, autoAdvance, projects: [] };
+      localStorage.setItem('playtracks_session', JSON.stringify(minimal));
+    } catch(e2) { console.warn('localStorage full, session not saved'); }
+  }
 }
 
 async function restoreSession() {
@@ -1728,8 +1881,10 @@ async function deleteProject(id, e) {
   if (e) e.stopPropagation();
   projects = projects.filter(p => p.id !== id);
   try { await dbDelete('projects', id); } catch(er){}
-  // Delete all audio entries for this project
-  for (let i = 1; i <= 100; i++) try { await dbDelete('audio', `${id}_${i}`); } catch(er) { break; }
+  // Delete all audio entries — continue on missing keys, don't break
+  for (let i = 1; i <= 100; i++) {
+    try { await dbDelete('audio', `${id}_${i}`); } catch(er) { continue; }
+  }
   if (currentProjectId === id) currentProjectId = null;
   saveSession();
   renderProjectList();
@@ -1750,7 +1905,13 @@ function openMetaModal() {
   pp.innerHTML=tempPhotoBase64?`<img src="${tempPhotoBase64}" style="width:100%;height:100%;object-fit:cover">`:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
   document.getElementById('metaModal').classList.add('open');
 }
-function closeMetaModal(){document.getElementById('metaModal').classList.remove('open');}
+function closeMetaModal(){ saveModeModal = false; document.getElementById('metaModal').classList.remove('open'); }
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  closeMetaModal();
+  if (document.getElementById('projDrawer').classList.contains('open')) closeDrawer();
+});
 
 document.getElementById('photoInput').addEventListener('change',function(e){
   const f=e.target.files[0]; if(!f)return;
@@ -1768,8 +1929,9 @@ document.getElementById('metaSave').onclick = async () => {
   currentProjectMeta.name   = document.getElementById('metaName').value.trim()   || 'Sem título';
   currentProjectMeta.artist = document.getElementById('metaArtist').value.trim() || 'Artista desconhecido';
   currentProjectMeta.photo  = tempPhotoBase64;
+  const shouldSave = saveModeModal; // capture before closeMetaModal resets it
   closeMetaModal();
-  if (saveModeModal) { saveModeModal = false; await saveProject(); }
+  if (shouldSave) await saveProject();
 };
 document.getElementById('metaCancel').onclick = () => { saveModeModal = false; closeMetaModal(); };
 document.getElementById('metaModal').onclick = e => { if(e.target===document.getElementById('metaModal')){ saveModeModal=false; closeMetaModal(); } };
@@ -1777,51 +1939,141 @@ document.getElementById('metaModal').onclick = e => { if(e.target===document.get
 // ═══════════════════════════════════════════════════════════════
 // TIMELINE SEEK + SECTION MAPPING
 // ═══════════════════════════════════════════════════════════════
+// ── Section ID counter (avoids Date.now() collisions) ──
+let _secIdCounter = 0;
+function _newSecId() { return 'sec_' + (++_secIdCounter); }
+
+// ═══════════════════════════════════════════════════════════════
+// TIMELINE SEEK + SECTION MAPPING
+// ═══════════════════════════════════════════════════════════════
 (function(){
-  const tl=document.getElementById('masterTl');
-  let seeking=false;
+  const tl = document.getElementById('masterTl');
+  let seeking = false;
+  let wasPlaying = false; // local var — never stored on DOM element
+  let seekRect = null;    // cached getBoundingClientRect for the seek gesture
 
-  function posRatio(e){const rect=tl.getBoundingClientRect();const cx=e.touches?e.touches[0].clientX:e.clientX;return Math.max(0,Math.min(1,(cx-rect.left)/rect.width));}
+  function posRatio(clientX) {
+    if (!seekRect) seekRect = tl.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (clientX - seekRect.left) / seekRect.width));
+  }
 
-  tl.addEventListener('mousedown',e=>{
-    if(mappingMode){
-      // In mapping mode: add section or drag existing
-      const ratio=posRatio(e);
-      // Check if near existing section marker (within 8px)
-      const W=tl.clientWidth;
-      const near=sections.find(s=>Math.abs(s.pos*W-ratio*W)<10);
-      if(near){dragSec=near;return;}
+  // Shared seek start — stops audio cleanly via internal helper
+  function beginSeek(clientX) {
+    seekRect = tl.getBoundingClientRect(); // fresh rect at gesture start
+    wasPlaying = isPlaying;
+    if (isPlaying) {
+      // Stop sources without full pause() so we can resume smoothly
+      tracks.forEach(t => {
+        const n = trackNodes[t.id];
+        if (n && n.source) { try { n.source.stop(); } catch(ex){} n.source = null; }
+      });
+      isPlaying = false;
+      cancelAnimationFrame(animId);
+      document.getElementById('btnPlay').classList.remove('playing');
+      document.getElementById('playIcon').innerHTML = '<path d="M5 3l14 9-14 9V3z"/>';
+    }
+    seeking = true;
+    const r = posRatio(clientX);
+    pauseOffset = Math.max(0, r * DURATION);
+    movePH(DURATION > 0 ? pauseOffset / DURATION : 0);
+    updT(pauseOffset);
+  }
+
+  function doSeek(clientX) {
+    const r = posRatio(clientX);
+    pauseOffset = Math.max(0, r * DURATION);
+    movePH(DURATION > 0 ? pauseOffset / DURATION : 0);
+    updT(pauseOffset);
+  }
+
+  function endSeek() {
+    seekRect = null;
+    seeking = false;
+    if (wasPlaying) play();
+  }
+
+  // ── MOUSE ──
+  tl.addEventListener('mousedown', e => {
+    if (e.button !== 0) return; // left click only
+    if (mappingMode) {
+      const ratio = posRatio(e.clientX);
+      const W = tl.clientWidth;
+      // Drag existing marker?
+      const near = sections.find(s => Math.abs(s.pos * W - ratio * W) < 10);
+      if (near) { dragSec = near; return; }
       // Add new section
-      if(selectedSecType){
-        const secDef=SECTION_TYPES.find(s=>s.id===selectedSecType);
-        sections.push({id:'sec_'+Date.now(),type:secDef.id,label:secDef.label,color:secDef.color,pos:ratio});
-        sections.sort((a,b)=>a.pos-b.pos);
+      if (selectedSecType) {
+        const secDef = SECTION_TYPES.find(s => s.id === selectedSecType);
+        sections.push({ id: _newSecId(), type: secDef.id, label: secDef.label, color: secDef.color, pos: ratio });
+        sections.sort((a, b) => a.pos - b.pos);
         drawSectionsOverlay();
       }
       return;
     }
-    seeking=true;
-    const wasPlaying=isPlaying;
-    if(wasPlaying){tracks.forEach(t=>{const n=trackNodes[t.id];if(n&&n.source){try{n.source.stop()}catch(ex){}n.source=null;}});isPlaying=false;cancelAnimationFrame(animId);document.getElementById('btnPlay').classList.remove('playing');document.getElementById('playIcon').innerHTML='<path d="M5 3l14 9-14 9V3z"/>';}
-    tl._was=wasPlaying;
-    pauseOffset=posRatio(e)*DURATION; movePH(DURATION>0?pauseOffset/DURATION:0); updT(pauseOffset);
+    if (DURATION === 0) return;
+    beginSeek(e.clientX);
   });
 
-  document.addEventListener('mousemove',e=>{
-    if(dragSec){dragSec.pos=Math.max(0,Math.min(1,posRatio(e)));drawSectionsOverlay();return;}
-    if(!seeking)return;
-    pauseOffset=posRatio(e)*DURATION; movePH(DURATION>0?pauseOffset/DURATION:0); updT(pauseOffset);
+  document.addEventListener('mousemove', e => {
+    if (dragSec) {
+      const rect = tl.getBoundingClientRect();
+      dragSec.pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      drawSectionsOverlay();
+      return;
+    }
+    if (!seeking) return;
+    doSeek(e.clientX);
   });
 
-  document.addEventListener('mouseup',e=>{
-    if(dragSec){dragSec=null;return;}
-    if(!seeking)return; seeking=false;
-    if(tl._was)play();
+  document.addEventListener('mouseup', e => {
+    if (dragSec) { dragSec = null; _flushProjectMeta().catch(() => {}); return; }
+    if (!seeking) return;
+    endSeek();
   });
 
-  tl.addEventListener('touchstart',e=>{e.preventDefault();if(mappingMode)return;seeking=true;tl._was=isPlaying;if(isPlaying){tracks.forEach(t=>{const n=trackNodes[t.id];if(n&&n.source){try{n.source.stop()}catch(ex){}n.source=null;}});isPlaying=false;cancelAnimationFrame(animId);document.getElementById('btnPlay').classList.remove('playing');document.getElementById('playIcon').innerHTML='<path d="M5 3l14 9-14 9V3z"/>';}pauseOffset=posRatio(e)*DURATION;movePH(DURATION>0?pauseOffset/DURATION:0);updT(pauseOffset);},{passive:false});
-  document.addEventListener('touchmove',e=>{if(!seeking)return;e.preventDefault();pauseOffset=posRatio(e)*DURATION;movePH(DURATION>0?pauseOffset/DURATION:0);updT(pauseOffset);},{passive:false});
-  document.addEventListener('touchend',()=>{if(!seeking)return;seeking=false;if(tl._was)play();});
+  // ── TOUCH ──
+  tl.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    if (mappingMode) {
+      // Touch section drag
+      const rect = tl.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+      const W = tl.clientWidth;
+      const near = sections.find(s => Math.abs(s.pos * W - ratio * W) < 18); // wider hit on touch
+      if (near) { dragSec = near; return; }
+      if (selectedSecType) {
+        const secDef = SECTION_TYPES.find(s => s.id === selectedSecType);
+        sections.push({ id: _newSecId(), type: secDef.id, label: secDef.label, color: secDef.color, pos: ratio });
+        sections.sort((a, b) => a.pos - b.pos);
+        drawSectionsOverlay();
+      }
+      return;
+    }
+    if (DURATION === 0) return;
+    beginSeek(touch.clientX);
+  }, { passive: false });
+
+  document.addEventListener('touchmove', e => {
+    if (!e.touches.length) return;
+    const touch = e.touches[0];
+    if (dragSec) {
+      e.preventDefault();
+      const rect = tl.getBoundingClientRect();
+      dragSec.pos = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+      drawSectionsOverlay();
+      return;
+    }
+    if (!seeking) return;
+    e.preventDefault();
+    doSeek(touch.clientX);
+  }, { passive: false });
+
+  document.addEventListener('touchend', e => {
+    if (dragSec) { dragSec = null; _flushProjectMeta().catch(() => {}); return; }
+    if (!seeking) return;
+    endSeek();
+  });
 })();
 
 // Mapping mode toggle
@@ -1843,8 +2095,9 @@ document.getElementById('btnDoneMap').onclick=()=>{
   document.getElementById('btnClearSections').style.display='none';
   document.getElementById('btnDoneMap').style.display='none';
   drawSectionsOverlay();
+  // Persist sections after mapping session ends
+  _flushProjectMeta().catch(() => {});
 };
-document.getElementById('btnClearSections').onclick=()=>{sections=[];drawSectionsOverlay();};
 
 // ═══════════════════════════════════════════════════════════════
 // NEW PROJECT
@@ -1860,6 +2113,7 @@ function newProject() {
   sections = []; currentProjectId = null;
   currentProjectMeta = { name: '', artist: '', photo: null };
   trackNodes = {};
+  _savedAudioKeys.clear();
   // Reset mute state
   allMuted = false;
   document.getElementById('toggleMuteLbl').textContent = 'Silenciar tudo';
@@ -1878,7 +2132,6 @@ function newProject() {
 // ═══════════════════════════════════════════════════════════════
 document.getElementById('btnPlay').onclick=()=>isPlaying?pause():play();
 document.getElementById('btnStop').onclick=stop;
-document.getElementById('btnRew').onclick=()=>{if(isPlaying){pause();pauseOffset=0;play();}else{pauseOffset=0;movePH(0);}};
 document.getElementById('btnLoop').onclick=function(){loopEnabled=!loopEnabled;this.classList.toggle('active',loopEnabled);tracks.forEach(t=>{const n=trackNodes[t.id];if(n&&n.source)n.source.loop=loopEnabled;});};
 document.getElementById('btnMetro').onclick=function(){this.classList.toggle('active');};
 
@@ -1928,26 +2181,70 @@ document.getElementById('btnToggleMute').onclick = () => {
     lbl.textContent = 'Silenciar tudo';
     document.getElementById('btnToggleMute').classList.remove('active');
   }
-  renderCompositeMix();
+  _drawApproxComposite();
+  scheduleComposite();
+}; // ← closing btnToggleMute.onclick
+
+document.getElementById('bpmInput').onchange = () => drawMasterWaveform();
+
+// Fix 2: clear sections and persist
+document.getElementById('btnClearSections').onclick = () => {
+  sections = [];
+  drawSectionsOverlay();
+  _flushProjectMeta().catch(() => {});
 };
 
-document.getElementById('bpmInput').onchange=()=>drawMasterWaveform();
+// Fix 6: rewind — stop cleanly then restart from 0
+document.getElementById('btnRew').onclick = () => {
+  if (isPlaying) {
+    // Stop all sources, reset position, restart
+    tracks.forEach(t => { const n=trackNodes[t.id]; if(n&&n.source){try{n.source.stop()}catch(ex){}n.source=null;} });
+    isPlaying = false; cancelAnimationFrame(animId);
+    pauseOffset = 0;
+    play();
+  } else {
+    pauseOffset = 0;
+    movePH(0);
+    updT(0);
+  }
+};
 
-// Drag & drop
-document.addEventListener('dragover',e=>{e.preventDefault();document.getElementById('dropZone').classList.add('active');});
-document.addEventListener('dragleave',e=>{if(!e.relatedTarget)document.getElementById('dropZone').classList.remove('active');});
-document.addEventListener('drop',async e=>{
-  e.preventDefault();document.getElementById('dropZone').classList.remove('active');
-  const files=Array.from(e.dataTransfer.files);
-  const pt=files.find(f=>f.name.endsWith('.ptracks'));
-  if(pt){await importPtracks(pt);return;}
-  const audio=files.filter(isAudioFile);
-  if(audio.length)await loadFiles(audio);
+// Fix 3: debounced resize handler
+let _resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    drawMasterWaveform();
+    tracks.forEach(t => {
+      const cv = document.getElementById('wave-'+t.id);
+      if (!cv) return;
+      cv.width = cv.offsetWidth || 200;
+      if (t.waveformCache) drawStaticWave(t.id);
+      else drawFlatWave(cv.getContext('2d'), cv.width, cv.height||46, t.hex);
+    });
+  }, 120);
 });
 
-window.addEventListener('resize',()=>{
-  drawMasterWaveform();
-  tracks.forEach(t=>{const cv=document.getElementById('wave-'+t.id);if(!cv)return;cv.width=cv.offsetWidth||200;if(t.waveformCache)drawStaticWave(t.id);else drawFlatWave(cv.getContext('2d'),cv.width,cv.height||46,t.hex);});
+// Fix 4+5: drag-and-drop — reliable dragleave, handle multiple .ptracks
+const dropZone = document.getElementById('dropZone');
+let _dragCounter = 0; // track enter/leave pairs to avoid flickering on child elements
+document.addEventListener('dragenter', e => { e.preventDefault(); _dragCounter++; dropZone.classList.add('active'); });
+document.addEventListener('dragleave', e => { _dragCounter = Math.max(0, _dragCounter - 1); if (_dragCounter === 0) dropZone.classList.remove('active'); });
+document.addEventListener('dragover', e => { e.preventDefault(); });
+document.addEventListener('drop', async e => {
+  e.preventDefault();
+  _dragCounter = 0;
+  dropZone.classList.remove('active');
+  const files = Array.from(e.dataTransfer.files);
+  // Handle .ptracks files first (import first one found, warn if multiple)
+  const ptFiles = files.filter(f => f.name.endsWith('.ptracks'));
+  const audioFiles = files.filter(isAudioFile);
+  if (ptFiles.length > 0) {
+    if (ptFiles.length > 1) setSt('Múltiplos .ptracks — importando o primeiro', 'var(--warn)');
+    await importPtracks(ptFiles[0]);
+    return;
+  }
+  if (audioFiles.length) await loadFiles(audioFiles);
 });
 
 // ═══════════════════════════════════════════════════════════════
