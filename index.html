@@ -532,7 +532,24 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
 // ═══════════════════════════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════
-const PALETTE = ['#FF3D5A','#FF7A2E','#FFD020','#20E87A','#20C8FF','#9B5EFF','#FF6BB5','#00E0C6','#FFAB40','#7B8FFF'];
+const PALETTE = [
+  '#FF3D5A','#FF7A2E','#FFD020','#20E87A','#20C8FF','#9B5EFF',
+  '#FF6BB5','#00E0C6','#FFAB40','#7B8FFF','#FF5C8A','#4DFFB4',
+  '#FF9D00','#00D4FF','#B44DFF','#FFD700','#00FF88','#FF4466',
+  '#44DDFF','#FF8800'
+];
+
+// Pick a color that isn't already used by an existing track
+function _pickTrackColor() {
+  const usedColors = new Set(tracks.map(t => t.hex));
+  // First try palette colors not yet used
+  for (const color of PALETTE) {
+    if (!usedColors.has(color)) return color;
+  }
+  // All palette colors used — generate a distinct hue via golden angle
+  const hue = (tracks.length * 137.508) % 360;
+  return `hsl(${Math.round(hue)}, 85%, 60%)`;
+}
 const SECTION_TYPES = [
   {id:'intro',    label:'Intro',       color:'#4FC3FF'},
   {id:'verse',    label:'Verso',       color:'#20E87A'},
@@ -631,6 +648,21 @@ function destroyChain(id) {
   delete trackNodes[id];
 }
 
+// Load audio buffer from IDB on demand (may have been released to save RAM)
+async function _ensureBuffers() {
+  const missing = tracks.filter(t => !t.buffer && t.waveformCache); // has peaks but no buffer
+  if (!missing.length) return;
+  setSt('Preparando áudio...', 'var(--warn)');
+  await Promise.all(missing.map(async track => {
+    try {
+      const audioRec = await dbGet('audio', `${currentProjectId}_${track.id}`).catch(() => null);
+      if (!audioRec) return;
+      const buf = _decodeAudioRec(audioRec);
+      if (buf) { track.buffer = buf; _savedAudioKeys.add(`${currentProjectId}_${track.id}`); }
+    } catch(e) { console.warn('On-demand load failed:', e); }
+  }));
+}
+
 function startSources() {
   const ratio = Math.pow(2, currentPitch / 12);
   tracks.forEach(track => {
@@ -653,7 +685,20 @@ function startSources() {
 function play() {
   initAudio();
   if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (!tracks.length) { setSt('Nenhuma faixa carregada','var(--danger)'); return; }
+  // If buffers were released to save RAM, reload them first
+  if (tracks.some(t => !t.buffer && t.waveformCache)) {
+    _ensureBuffers().then(() => {
+      if (!tracks.some(t => t.buffer)) { setSt('Sem áudio disponível','var(--danger)'); return; }
+      _doPlay();
+    });
+    return;
+  }
   if (!tracks.some(t => t.buffer)) { setSt('Carregue arquivos de áudio antes de reproduzir','var(--danger)'); return; }
+  _doPlay();
+}
+
+function _doPlay() {
   startSources();
   isPlaying = true;
   startTime = audioCtx.currentTime - pauseOffset;
@@ -840,7 +885,7 @@ async function loadFiles(files) {
 }
 
 async function addTrackFromFile(file) {
-  const hex = PALETTE[tracks.length % PALETTE.length];
+  const hex = _pickTrackColor();
   const name = file.name.replace(/\.[^.]+$/,'').replace(/[_-]/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
   const track = {
     id: nextId++, name, hex, fileName: file.name, buffer: null, waveformCache: null,
@@ -863,9 +908,12 @@ async function addTrackFromFile(file) {
     showTrackLoad(track.id, false);
     drawStaticWave(track.id);
     countSt();
-    _rebuildMeterCache(); // keep meter cache in sync
-    // ── Save this track to IndexedDB immediately ──
+    _rebuildMeterCache();
+    // Save to IDB — _saveTrackAudio releases buffer from RAM after save
+    // (buffer is reloaded on-demand when play() is called)
+    track.buffer = buf; // temporarily assign so _saveTrackAudio can read it
     await _saveTrackAudio(track);
+    // track.buffer is now null — reloaded from IDB when needed
     await _flushProjectMeta();
   } catch(err) {
     showTrackLoad(track.id, false);
@@ -875,17 +923,28 @@ async function addTrackFromFile(file) {
   }
 }
 
-// Save a single track's audio data to IndexedDB
+// Save track audio as raw binary PCM — IDB handles ArrayBuffer natively with no serialisation overhead.
+// Format: interleaved Int16 PCM (like WAV body), one buffer per channel stored separately.
 async function _saveTrackAudio(track) {
   if (!track.buffer || !db || !currentProjectId) return;
   try {
-    const channels = [];
-    for (let c = 0; c < track.buffer.numberOfChannels; c++) {
-      channels.push(track.buffer.getChannelData(c).slice());
+    const { numberOfChannels, sampleRate, length } = track.buffer;
+    // Pack each channel as Int16 ArrayBuffer (2 bytes/sample vs 4 for Float32 — 50% smaller)
+    const channelBufs = [];
+    for (let c = 0; c < numberOfChannels; c++) {
+      const f32 = track.buffer.getChannelData(c);
+      const i16 = new Int16Array(length);
+      for (let j = 0; j < length; j++) {
+        i16[j] = Math.max(-32768, Math.min(32767, f32[j] * 32767));
+      }
+      channelBufs.push(i16.buffer); // raw ArrayBuffer — IDB stores binary natively
     }
     const key = `${currentProjectId}_${track.id}`;
-    await dbPut('audio', { key, channels, sampleRate: track.buffer.sampleRate, length: track.buffer.length });
-    _savedAudioKeys.add(key); // mark as saved so autoBackup skips it next time
+    await dbPut('audio', { key, channels: channelBufs, sampleRate, length, format: 'int16' });
+    _savedAudioKeys.add(key);
+    // Release AudioBuffer from RAM after saving — peaks are already in waveformCache
+    // Buffer will be reloaded from IDB on demand when play() is called
+    track.buffer = null;
   } catch(e) { console.warn('Track audio save failed:', e); }
 }
 
@@ -951,27 +1010,26 @@ function _drawApproxComposite() {
 // ═══════════════════════════════════════════════════════════════
 let _compositeMixRunning = false;
 async function renderCompositeMix() {
-  if (_compositeMixRunning) return; // already running — skip duplicate call
-  if (!audioCtx || !tracks.some(t=>t.buffer) || DURATION===0) return;
+  if (_compositeMixRunning) return;
+  const activeTracks = tracks.filter(t => t.buffer);
+  if (!audioCtx || !activeTracks.length || DURATION === 0) return;
   _compositeMixRunning = true;
   try {
-    const sr=audioCtx.sampleRate, len=Math.ceil(DURATION*sr);
-    const off=new OfflineAudioContext(1,len,sr);
-    tracks.forEach(track=>{
-      if(!track.buffer)return;
-      const src=off.createBufferSource(); src.buffer=track.buffer;
-      const gn=off.createGain(); gn.gain.value=track.muted?0:track.vol/100;
+    const sr = audioCtx.sampleRate, len = Math.ceil(DURATION * sr);
+    const off = new OfflineAudioContext(1, len, sr);
+    activeTracks.forEach(track => {
+      const src = off.createBufferSource(); src.buffer = track.buffer;
+      const gn = off.createGain(); gn.gain.value = track.muted ? 0 : track.vol / 100;
       src.connect(gn); gn.connect(off.destination); src.start(0);
     });
-    const rendered=await off.startRendering();
-    const ch=rendered.getChannelData(0);
-    const pts=2048;
-    const step=Math.floor(ch.length/pts);
-    const peaks=new Float32Array(pts);
-    for(let i=0;i<pts;i++){let mx=0;for(let j=0;j<step;j++){const v=Math.abs(ch[i*step+j]||0);if(v>mx)mx=v;}peaks[i]=mx;}
-    masterPeaks=peaks;
+    const rendered = await off.startRendering();
+    const ch = rendered.getChannelData(0);
+    const pts = 2048, step = Math.floor(ch.length / pts);
+    const peaks = new Float32Array(pts);
+    for (let i = 0; i < pts; i++) { let mx = 0; for (let j = 0; j < step; j++) { const v = Math.abs(ch[i*step+j]||0); if(v>mx)mx=v; } peaks[i]=mx; }
+    masterPeaks = peaks;
     drawMasterWaveform();
-  } catch(e){console.warn('composite mix error',e);}
+  } catch(e) { console.warn('composite mix error', e); }
   finally { _compositeMixRunning = false; }
 }
 
@@ -1544,14 +1602,33 @@ async function loadProject(id, autoPlay = false) {
   _loadAudioInBackground(proj, tInfos, autoPlay);
 }
 
+// Decode an IDB audio record back into an AudioBuffer
+function _decodeAudioRec(audioRec) {
+  if (!audioRec || !audioRec.channels || !audioRec.channels.length) return null;
+  const { channels, sampleRate, length, format } = audioRec;
+  const buf = audioCtx.createBuffer(channels.length, length, sampleRate);
+  channels.forEach((ch, c) => {
+    if (format === 'int16') {
+      // Convert Int16 back to Float32
+      const i16 = ch instanceof Int16Array ? ch : new Int16Array(ch);
+      const f32 = new Float32Array(length);
+      for (let j = 0; j < length; j++) f32[j] = i16[j] / 32767;
+      buf.copyToChannel(f32, c);
+    } else {
+      // Legacy Float32 format
+      buf.copyToChannel(ch instanceof Float32Array ? ch : new Float32Array(ch), c);
+    }
+  });
+  return buf;
+}
+
 async function _loadAudioInBackground(proj, tInfos, autoPlay) {
   let anyLoaded = false;
-  let playStarted = false;
 
   for (let i = 0; i < tInfos.length; i++) {
     const tInfo = tInfos[i];
     const track = tracks[i];
-    if (!track || track.buffer) continue; // gone or already loaded
+    if (!track || track.buffer) continue;
 
     await new Promise(r => setTimeout(r, 0)); // yield — keep UI alive
 
@@ -1562,10 +1639,8 @@ async function _loadAudioInBackground(proj, tInfos, autoPlay) {
         continue;
       }
 
-      const buf = audioCtx.createBuffer(audioRec.channels.length, audioRec.length, audioRec.sampleRate);
-      audioRec.channels.forEach((ch, c) =>
-        buf.copyToChannel(ch instanceof Float32Array ? ch : new Float32Array(ch), c)
-      );
+      const buf = _decodeAudioRec(audioRec);
+      if (!buf) { showTrackLoad(track.id, false); continue; }
 
       track.buffer = buf;
       DURATION = Math.max(DURATION, buf.duration);
@@ -1574,11 +1649,10 @@ async function _loadAudioInBackground(proj, tInfos, autoPlay) {
       _savedAudioKeys.add(`${proj.id}_${tInfo.id}`);
       anyLoaded = true;
 
-      // Start playback as soon as first track is ready
-      if (autoPlay && !playStarted) {
-        playStarted = true;
-        updateChips();
-        play();
+      // Update progress — show how many tracks are loaded
+      const loaded = tracks.filter(t => t.buffer).length;
+      if (loaded < tInfos.length) {
+        setSt(`Carregando áudio ${loaded}/${tInfos.length}...`, 'var(--warn)');
       }
     } catch(e) {
       showTrackLoad(track.id, false);
@@ -1586,12 +1660,25 @@ async function _loadAudioInBackground(proj, tInfos, autoPlay) {
     }
   }
 
-  if (anyLoaded) {
-    updateChips(); countSt(); _rebuildMeterCache();
-    setTimeout(() => renderCompositeMix(), 0);
+  if (!anyLoaded) return;
+
+  updateChips(); countSt(); _rebuildMeterCache();
+  // Render composite now that ALL tracks are loaded
+  setTimeout(() => renderCompositeMix(), 0);
+
+  // Only auto-play AFTER all tracks have loaded — prevents desync
+  if (autoPlay) {
+    const readyCount = tracks.filter(t => t.buffer).length;
+    const expectedCount = tInfos.length;
+    if (readyCount > 0) {
+      if (readyCount < expectedCount) {
+        setSt(`Iniciando com ${readyCount}/${expectedCount} faixas`, 'var(--warn)');
+      }
+      play();
+    }
+  } else {
+    setSt(tracks.filter(t=>t.buffer).length + ' faixa' + (tracks.length!==1?'s':'') + ' prontas', 'var(--ok)');
   }
-  if (autoPlay && !playStarted && anyLoaded) play();
-  else if (!autoPlay && anyLoaded) setSt(tracks.filter(t=>t.buffer).length + ' faixa' + (tracks.length!==1?'s':'') + ' prontas', 'var(--ok)');
 }
 
 // ═══════════════════════════════════════════════════════════════
