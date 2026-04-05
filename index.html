@@ -949,17 +949,20 @@ function _drawApproxComposite() {
 // ═══════════════════════════════════════════════════════════════
 // COMPOSITE MASTER WAVEFORM (runs in background after load)
 // ═══════════════════════════════════════════════════════════════
+let _compositeMixRunning = false;
 async function renderCompositeMix() {
+  if (_compositeMixRunning) return; // already running — skip duplicate call
   if (!audioCtx || !tracks.some(t=>t.buffer) || DURATION===0) return;
-  const sr=audioCtx.sampleRate, len=Math.ceil(DURATION*sr);
-  const off=new OfflineAudioContext(1,len,sr);
-  tracks.forEach(track=>{
-    if(!track.buffer)return;
-    const src=off.createBufferSource(); src.buffer=track.buffer;
-    const gn=off.createGain(); gn.gain.value=track.muted?0:track.vol/100;
-    src.connect(gn); gn.connect(off.destination); src.start(0);
-  });
+  _compositeMixRunning = true;
   try {
+    const sr=audioCtx.sampleRate, len=Math.ceil(DURATION*sr);
+    const off=new OfflineAudioContext(1,len,sr);
+    tracks.forEach(track=>{
+      if(!track.buffer)return;
+      const src=off.createBufferSource(); src.buffer=track.buffer;
+      const gn=off.createGain(); gn.gain.value=track.muted?0:track.vol/100;
+      src.connect(gn); gn.connect(off.destination); src.start(0);
+    });
     const rendered=await off.startRendering();
     const ch=rendered.getChannelData(0);
     const pts=2048;
@@ -969,6 +972,7 @@ async function renderCompositeMix() {
     masterPeaks=peaks;
     drawMasterWaveform();
   } catch(e){console.warn('composite mix error',e);}
+  finally { _compositeMixRunning = false; }
 }
 
 function drawMasterWaveform() {
@@ -1486,7 +1490,8 @@ async function loadProject(id, autoPlay = false) {
     tracks = []; nextId = 1; DURATION = 0; pauseOffset = 0; masterPeaks = null;
     document.getElementById('trackList').innerHTML = '';
     trackNodes = {};
-    _savedAudioKeys.clear(); // reset so new project's tracks get saved correctly
+    _savedAudioKeys.clear();
+    _compositeMixRunning = false; // cancel any in-progress composite render
     allMuted = false;
     document.getElementById('toggleMuteLbl').textContent = 'Silenciar tudo';
     document.getElementById('toggleMuteIcon').innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/>';
@@ -1520,25 +1525,35 @@ async function loadProject(id, autoPlay = false) {
       tInfos.map(tInfo => dbGet('audio', `${proj.id}_${tInfo.id}`).catch(() => null))
     );
 
-    // ── Step 3: Build AudioBuffers (fast — just memory copy, no decode) ──
-    audioRecs.forEach((audioRec, i) => {
+    // ── Step 3: Build AudioBuffers — yield between tracks so UI stays responsive ──
+    for (let i = 0; i < audioRecs.length; i++) {
+      const audioRec = audioRecs[i];
       const track = tracks[i];
+      const tInfo = tInfos[i];
+
       if (!audioRec || !audioRec.channels || !audioRec.channels.length) {
         showTrackLoad(track.id, false);
-        return;
+        continue;
       }
+
+      // Yield to browser before each heavy copy so the UI doesn't freeze
+      await new Promise(r => setTimeout(r, 0));
+
       const buf = audioCtx.createBuffer(audioRec.channels.length, audioRec.length, audioRec.sampleRate);
-      audioRec.channels.forEach((ch, c) =>
-        buf.copyToChannel(ch instanceof Float32Array ? ch : new Float32Array(ch), c)
-      );
+      audioRec.channels.forEach((ch, c) => {
+        // Always ensure Float32Array — plain Arrays from older IDB entries are slow to copy
+        buf.copyToChannel(ch instanceof Float32Array ? ch : Float32Array.from(ch), c);
+      });
+
       track.buffer = buf;
       DURATION = Math.max(DURATION, buf.duration);
       cacheWave(track, buf);
       showTrackLoad(track.id, false);
-      // Mark audio as already in DB so autoBackup skips re-saving
-      _savedAudioKeys.add(`${proj.id}_${track.id}`);
-      requestAnimationFrame(() => drawStaticWave(track.id));
-    });
+      drawStaticWave(track.id);
+
+      // Use tInfo.id (the real DB key) — NOT track.id (the new session ID, starts from 1)
+      _savedAudioKeys.add(`${proj.id}_${tInfo.id}`);
+    }
 
     updateChips(); countSt();
     _rebuildMeterCache();
@@ -1632,6 +1647,7 @@ async function importPtracks(file) {
     document.getElementById('trackList').innerHTML='';
     trackNodes={};
     _savedAudioKeys.clear();
+    _compositeMixRunning = false;
     // Reset mute state
     allMuted = false;
     document.getElementById('toggleMuteLbl').textContent = 'Silenciar tudo';
@@ -2114,6 +2130,7 @@ function newProject() {
   currentProjectMeta = { name: '', artist: '', photo: null };
   trackNodes = {};
   _savedAudioKeys.clear();
+  _compositeMixRunning = false;
   // Reset mute state
   allMuted = false;
   document.getElementById('toggleMuteLbl').textContent = 'Silenciar tudo';
