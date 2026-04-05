@@ -1443,7 +1443,7 @@ function setPitch(val) {
 // ═══════════════════════════════════════════════════════════════
 function buildProjectObj() {
   return {
-    id: currentProjectId, // caller must ensure this is set before calling
+    id: currentProjectId,
     name: currentProjectMeta.name || 'Sem título',
     artist: currentProjectMeta.artist || 'Artista desconhecido',
     photo: currentProjectMeta.photo || null,
@@ -1453,7 +1453,9 @@ function buildProjectObj() {
     tracks: tracks.map(t => ({
       id: t.id, name: t.name, hex: t.hex, fileName: t.fileName,
       vol: t.vol, pan: t.pan, phase: t.phase, muted: t.muted, soloed: t.soloed,
-      eq: t.eq, sends: t.sends
+      eq: t.eq, sends: t.sends,
+      // Store waveform peaks so UI can restore instantly without reading full audio
+      peaks: t.waveformCache ? Array.from(t.waveformCache) : null
     }))
   };
 }
@@ -1480,100 +1482,116 @@ async function saveProject() {
 async function loadProject(id, autoPlay = false) {
   if (isLoadingProject) return;
   isLoadingProject = true;
-  try {
-    const proj = await dbGet('projects', id);
-    if (!proj) { setSt('Projeto não encontrado','var(--danger)'); return; }
-    if (isPlaying) pause();
 
-    // ── Clear state ──
-    tracks.forEach(t => destroyChain(t.id));
-    tracks = []; nextId = 1; DURATION = 0; pauseOffset = 0; masterPeaks = null;
-    document.getElementById('trackList').innerHTML = '';
-    trackNodes = {};
-    _savedAudioKeys.clear();
-    _compositeMixRunning = false; // cancel any in-progress composite render
-    allMuted = false;
-    document.getElementById('toggleMuteLbl').textContent = 'Silenciar tudo';
-    document.getElementById('toggleMuteIcon').innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/>';
-    document.getElementById('btnToggleMute').classList.remove('active');
-    initAudio();
-    currentProjectId = proj.id;
-    currentProjectMeta = { name: proj.name, artist: proj.artist, photo: proj.photo||null };
-    sections = proj.sections || [];
-    document.getElementById('bpmInput').value = proj.bpm || 120;
-    setSt('Carregando "' + proj.name + '"...', 'var(--warn)');
+  // ── Phase 1: Read project metadata only (KB, instant) ──
+  let proj;
+  try { proj = await dbGet('projects', id); } catch(e) {}
+  if (!proj) {
+    setSt('Projeto não encontrado','var(--danger)');
+    isLoadingProject = false;
+    return;
+  }
+  if (isPlaying) pause();
 
-    const tInfos = proj.tracks || [];
+  // Clear state
+  tracks.forEach(t => destroyChain(t.id));
+  tracks = []; nextId = 1; DURATION = 0; pauseOffset = 0; masterPeaks = null;
+  document.getElementById('trackList').innerHTML = '';
+  trackNodes = {};
+  _savedAudioKeys.clear();
+  _compositeMixRunning = false;
+  allMuted = false;
+  document.getElementById('toggleMuteLbl').textContent = 'Silenciar tudo';
+  document.getElementById('toggleMuteIcon').innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/>';
+  document.getElementById('btnToggleMute').classList.remove('active');
+  initAudio();
+  currentProjectId = proj.id;
+  currentProjectMeta = { name: proj.name, artist: proj.artist, photo: proj.photo||null };
+  sections = proj.sections || [];
+  document.getElementById('bpmInput').value = proj.bpm || 120;
+  DURATION = proj.duration || 0;
 
-    // ── Step 1: Render track UI shells immediately (instant) ──
-    tInfos.forEach(tInfo => {
-      const track = {
-        id: nextId++, name: tInfo.name, hex: tInfo.hex, fileName: tInfo.fileName,
-        buffer: null, waveformCache: null,
-        muted: tInfo.muted||false, soloed: tInfo.soloed||false, vol: tInfo.vol||80,
-        pan: tInfo.pan||0, phase: tInfo.phase||false, settingsOpen: false,
-        eq: tInfo.eq||{low:{gain:0,freq:80},mid:{gain:0,freq:1000,q:1},high:{gain:0,freq:8000}},
-        sends: tInfo.sends||{reverb:0,delay:0}
-      };
-      tracks.push(track);
-      renderTrackEl(track);
-      showTrackLoad(track.id, true);
-    });
+  const tInfos = proj.tracks || [];
 
-    // ── Step 2: Read ALL track audio from IndexedDB in parallel ──
-    const audioRecs = await Promise.all(
-      tInfos.map(tInfo => dbGet('audio', `${proj.id}_${tInfo.id}`).catch(() => null))
-    );
+  // ── Phase 1a: Build track objects + render UI immediately ──
+  tInfos.forEach(tInfo => {
+    const track = {
+      id: nextId++, name: tInfo.name, hex: tInfo.hex, fileName: tInfo.fileName,
+      buffer: null,
+      // Restore waveform from stored peaks (no audio needed!)
+      waveformCache: tInfo.peaks ? new Float32Array(tInfo.peaks) : null,
+      muted: tInfo.muted||false, soloed: tInfo.soloed||false, vol: tInfo.vol||80,
+      pan: tInfo.pan||0, phase: tInfo.phase||false, settingsOpen: false,
+      eq: tInfo.eq||{low:{gain:0,freq:80},mid:{gain:0,freq:1000,q:1},high:{gain:0,freq:8000}},
+      sends: tInfo.sends||{reverb:0,delay:0}
+    };
+    tracks.push(track);
+    renderTrackEl(track);
+    showTrackLoad(track.id, true);
+  });
 
-    // ── Step 3: Build AudioBuffers — yield between tracks so UI stays responsive ──
-    for (let i = 0; i < audioRecs.length; i++) {
-      const audioRec = audioRecs[i];
-      const track = tracks[i];
-      const tInfo = tInfos[i];
+  // ── Phase 1b: Draw waveforms from stored peaks (instant, no IO) ──
+  tracks.forEach(t => { if (t.waveformCache) drawStaticWave(t.id); });
+  _drawApproxComposite();
+  updateChips(); countSt();
+  _rebuildMeterCache();
+  drawSectionsOverlay();
+  saveSession();
+  renderProjectList();
+  isLoadingProject = false; // unlock — UI is ready, audio loads in background
 
+  // ── Phase 2: Load audio in background, one track at a time ──
+  _loadAudioInBackground(proj, tInfos, autoPlay);
+}
+
+async function _loadAudioInBackground(proj, tInfos, autoPlay) {
+  let anyLoaded = false;
+  let playStarted = false;
+
+  for (let i = 0; i < tInfos.length; i++) {
+    const tInfo = tInfos[i];
+    const track = tracks[i];
+    if (!track || track.buffer) continue; // gone or already loaded
+
+    await new Promise(r => setTimeout(r, 0)); // yield — keep UI alive
+
+    try {
+      const audioRec = await dbGet('audio', `${proj.id}_${tInfo.id}`).catch(() => null);
       if (!audioRec || !audioRec.channels || !audioRec.channels.length) {
         showTrackLoad(track.id, false);
         continue;
       }
 
-      // Yield to browser before each heavy copy so the UI doesn't freeze
-      await new Promise(r => setTimeout(r, 0));
-
       const buf = audioCtx.createBuffer(audioRec.channels.length, audioRec.length, audioRec.sampleRate);
-      audioRec.channels.forEach((ch, c) => {
-        // Always ensure Float32Array — plain Arrays from older IDB entries are slow to copy
-        buf.copyToChannel(ch instanceof Float32Array ? ch : Float32Array.from(ch), c);
-      });
+      audioRec.channels.forEach((ch, c) =>
+        buf.copyToChannel(ch instanceof Float32Array ? ch : new Float32Array(ch), c)
+      );
 
       track.buffer = buf;
       DURATION = Math.max(DURATION, buf.duration);
-      cacheWave(track, buf);
+      if (!track.waveformCache) { cacheWave(track, buf); drawStaticWave(track.id); }
       showTrackLoad(track.id, false);
-      drawStaticWave(track.id);
-
-      // Use tInfo.id (the real DB key) — NOT track.id (the new session ID, starts from 1)
       _savedAudioKeys.add(`${proj.id}_${tInfo.id}`);
+      anyLoaded = true;
+
+      // Start playback as soon as first track is ready
+      if (autoPlay && !playStarted) {
+        playStarted = true;
+        updateChips();
+        play();
+      }
+    } catch(e) {
+      showTrackLoad(track.id, false);
+      console.warn('Audio background load failed:', e);
     }
-
-    updateChips(); countSt();
-    _rebuildMeterCache();
-    drawSectionsOverlay();
-    saveSession();
-    renderProjectList();
-
-    // ── Step 4: Draw fast approximate composite from cached peaks (instant) ──
-    _drawApproxComposite();
-
-    // ── Step 5: Start playback immediately if requested ──
-    if (autoPlay) play();
-
-    // ── Step 6: Render proper composite waveform in background ──
-    // Does NOT block playback — fires after current call stack clears
-    setTimeout(() => renderCompositeMix(), 0);
-
-  } finally {
-    isLoadingProject = false;
   }
+
+  if (anyLoaded) {
+    updateChips(); countSt(); _rebuildMeterCache();
+    setTimeout(() => renderCompositeMix(), 0);
+  }
+  if (autoPlay && !playStarted && anyLoaded) play();
+  else if (!autoPlay && anyLoaded) setSt(tracks.filter(t=>t.buffer).length + ' faixa' + (tracks.length!==1?'s':'') + ' prontas', 'var(--ok)');
 }
 
 // ═══════════════════════════════════════════════════════════════
