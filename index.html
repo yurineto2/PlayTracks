@@ -98,14 +98,14 @@ header{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
 /* ── TRACK LIST ── */
 .tracks-wrap{flex:1;overflow-y:auto;background:var(--bg0)}
 .track-block{border-bottom:1px solid var(--border)}
-.track-row{display:grid;grid-template-columns:4px minmax(150px,200px) 58px 1fr 26px;align-items:stretch;min-height:66px;transition:background .12s;cursor:pointer}
+.track-row{display:grid;grid-template-columns:4px minmax(150px,200px) 58px 1fr;align-items:stretch;min-height:66px;transition:background .12s;cursor:pointer}
 .track-row:hover{background:rgba(255,255,255,.015)}
 .track-row.settings-open{background:rgba(232,114,26,.04)}
 .track-stripe{width:4px}
-.track-info{display:flex;align-items:center;gap:9px;padding:0 12px;border-right:1px solid var(--border);min-width:0;pointer-events:none}
+.track-info{display:flex;align-items:center;gap:9px;padding:0 10px 0 12px;border-right:1px solid var(--border);min-width:0;pointer-events:none;position:relative}
 .track-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .ti-body{min-width:0;flex:1}
-.track-nm{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track-nm{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:22px}
 .track-nm-input{font-size:12px;font-weight:600;background:var(--bg3);border:1px solid var(--accent);border-radius:4px;color:var(--txt1);font-family:'Syne',sans-serif;padding:1px 5px;width:110px;outline:none}
 .track-tp{font-size:9px;color:var(--txt3);letter-spacing:.07em;text-transform:uppercase;margin-top:1px}
 .track-file{font-size:9px;color:var(--ok);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
@@ -127,11 +127,12 @@ header{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
 .track-loading.active{display:flex}
 .spin{width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.dots-wrap{display:flex;align-items:center;justify-content:center;pointer-events:all;z-index:2}
-.dots-btn{width:24px;height:24px;border-radius:4px;border:1px solid transparent;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--txt3);transition:all .12s}
+/* dots moved inside track-info */
+.dots-wrap{position:absolute;right:3px;top:50%;transform:translateY(-50%);pointer-events:all;z-index:10}
+.dots-btn{width:22px;height:22px;border-radius:4px;border:1px solid transparent;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--txt3);transition:all .12s}
 .dots-btn:hover{background:var(--bg4);border-color:var(--border2);color:var(--txt1)}
 .dot{width:3px;height:3px;border-radius:50%;background:currentColor}
-.dropdown{position:absolute;right:4px;top:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:4px;min-width:156px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;transform:scale(.94) translateY(-4px);pointer-events:none;transition:opacity .13s,transform .13s;transform-origin:top right}
+.dropdown{position:absolute;right:0;top:calc(100% + 2px);background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:4px;min-width:156px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;transform:scale(.94) translateY(-4px);pointer-events:none;transition:opacity .13s,transform .13s;transform-origin:top right}
 .dropdown.open{opacity:1;transform:scale(1) translateY(0);pointer-events:all}
 .dd-item{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:5px;cursor:pointer;font-size:11px;color:var(--txt2);transition:all .1s}
 .dd-item:hover{background:var(--bg4);color:var(--txt1)}
@@ -309,7 +310,7 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
   .master-tl { height: 54px; }
 
   /* Track row: narrower info column, hide extras */
-  .track-row { grid-template-columns: 4px minmax(88px,130px) 50px 1fr 28px; min-height: 58px; }
+  .track-row { grid-template-columns: 4px minmax(88px,130px) 50px 1fr; min-height: 58px; }
   .track-info { padding: 0 8px; }
   .track-nm { font-size: 11px; }
   .track-file { display: none; }
@@ -381,8 +382,13 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
   </div>
   <div class="sep"></div>
   <div style="display:flex;gap:3px">
-    <button class="tbtn-t" id="btnLoop"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></button>
+    <button class="tbtn-t" id="btnLoop" title="Loop"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></button>
     <button class="tbtn-t" id="btnMetro" title="Metrônomo (em breve)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 2 21 22 21"/><line x1="12" y1="9" x2="15" y2="18"/></svg></button>
+    <button class="tbtn-t" id="btnStereoSplit" title="Stereo Split: faixas 1-2 → L  •  demais → R">
+      <svg width="14" height="10" viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <text x="0" y="13" font-size="11" font-family="monospace" font-weight="700" fill="currentColor" stroke="none">L R</text>
+      </svg>
+    </button>
   </div>
   <div class="sep"></div>
   <div class="time-d" id="timeDisp">00:00.00</div>
@@ -560,6 +566,8 @@ const SECTION_TYPES = [
 ];
 const AUDIO_EXTS = /\.(mp3|wav|wave|flac|aiff|aif|ogg|oga|opus|m4a|aac|wma|caf|mp4|3gp|webm)$/i;
 const DB_NAME = 'playtracks_v1';
+// iOS Safari has ~150-200MB memory limit — disable heavy background ops
+const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 // ═══════════════════════════════════════════════════════════════
 // STATE
@@ -570,6 +578,7 @@ let DURATION = 0;
 let currentPitch = 0;
 let loopEnabled = false;
 let autoAdvance = false;
+let stereoSplit = false; // faixas 1-2 → L, demais → R
 let mappingMode = false;
 let selectedSecType = null;
 let sections = [];  // [{id, type, pos (0-1), label, color}]
@@ -657,7 +666,7 @@ async function _ensureBuffers() {
     try {
       const audioRec = await dbGet('audio', `${currentProjectId}_${track.id}`).catch(() => null);
       if (!audioRec) return;
-      const buf = _decodeAudioRec(audioRec);
+      const buf = await _decodeAudioRec(audioRec);
       if (buf) { track.buffer = buf; _savedAudioKeys.add(`${currentProjectId}_${track.id}`); }
     } catch(e) { console.warn('On-demand load failed:', e); }
   }));
@@ -923,28 +932,31 @@ async function addTrackFromFile(file) {
   }
 }
 
-// Save track audio as raw binary PCM — IDB handles ArrayBuffer natively with no serialisation overhead.
-// Format: interleaved Int16 PCM (like WAV body), one buffer per channel stored separately.
+// Save track audio as Int16 binary PCM in async chunks — never blocks the main thread
 async function _saveTrackAudio(track) {
   if (!track.buffer || !db || !currentProjectId) return;
   try {
     const { numberOfChannels, sampleRate, length } = track.buffer;
-    // Pack each channel as Int16 ArrayBuffer (2 bytes/sample vs 4 for Float32 — 50% smaller)
+    const CHUNK = 65536; // process 64K samples at a time to keep frame time <16ms
     const channelBufs = [];
+
     for (let c = 0; c < numberOfChannels; c++) {
       const f32 = track.buffer.getChannelData(c);
       const i16 = new Int16Array(length);
-      for (let j = 0; j < length; j++) {
-        i16[j] = Math.max(-32768, Math.min(32767, f32[j] * 32767));
+      for (let j = 0; j < length; j += CHUNK) {
+        const end = Math.min(j + CHUNK, length);
+        for (let k = j; k < end; k++) {
+          i16[k] = Math.max(-32768, Math.min(32767, f32[k] * 32767));
+        }
+        await new Promise(r => setTimeout(r, 0)); // yield between chunks
       }
-      channelBufs.push(i16.buffer); // raw ArrayBuffer — IDB stores binary natively
+      channelBufs.push(i16.buffer);
     }
+
     const key = `${currentProjectId}_${track.id}`;
     await dbPut('audio', { key, channels: channelBufs, sampleRate, length, format: 'int16' });
     _savedAudioKeys.add(key);
-    // Release AudioBuffer from RAM after saving — peaks are already in waveformCache
-    // Buffer will be reloaded from IDB on demand when play() is called
-    track.buffer = null;
+    track.buffer = null; // release from RAM — reload on demand when play() is called
   } catch(e) { console.warn('Track audio save failed:', e); }
 }
 
@@ -1011,6 +1023,8 @@ function _drawApproxComposite() {
 let _compositeMixRunning = false;
 async function renderCompositeMix() {
   if (_compositeMixRunning) return;
+  // Skip heavy OfflineAudioContext render on mobile — approx composite already showing
+  if (IS_MOBILE) return;
   const activeTracks = tracks.filter(t => t.buffer);
   if (!audioCtx || !activeTracks.length || DURATION === 0) return;
   _compositeMixRunning = true;
@@ -1288,6 +1302,27 @@ function toggleMute(id,e){
   if(btn) btn.classList.toggle('active',allMuted);
 }
 function toggleSolo(id,e){e.stopPropagation();const t=tracks.find(x=>x.id===id);if(!t)return;t.soloed=!t.soloed;document.getElementById('solo-'+id).classList.toggle('soloed',t.soloed);tracks.forEach(tr=>updateGain(tr.id));}
+
+function toggleStereoSplit() {
+  stereoSplit = !stereoSplit;
+  document.getElementById('btnStereoSplit').classList.toggle('active', stereoSplit);
+  tracks.forEach((t, idx) => {
+    // Index 0 and 1 (faixas 1 e 2) → left (-100), rest → right (+100)
+    const targetPan = stereoSplit ? (idx < 2 ? -100 : 100) : 0;
+    t.pan = targetPan;
+    // Update the pan slider and label if the settings panel is mounted
+    const panEl = document.getElementById('pan-'+t.id);
+    if (panEl) { panEl.value = targetPan; fillSlider(panEl,'var(--accent)',true); }
+    const panVal = document.getElementById('panval-'+t.id);
+    if (panVal) panVal.textContent = targetPan === 0 ? 'C' : targetPan < 0 ? 'L'+Math.abs(targetPan) : 'R'+targetPan;
+    const bar = document.getElementById('stb-'+t.id);
+    if (bar) bar.style.left = (50 + targetPan * 0.28 - 14) + '%';
+    // Apply to running audio node
+    const n = trackNodes[t.id];
+    if (n && n.pn && audioCtx) n.pn.pan.setTargetAtTime(targetPan / 100, audioCtx.currentTime, 0.05);
+  });
+  setSt(stereoSplit ? 'Stereo Split ativo — L: faixas 1-2 · R: demais' : 'Stereo Split desativado', stereoSplit ? 'var(--accent)' : 'var(--txt3)');
+}
 function setVol(id,val){
   const t=tracks.find(x=>x.id===id); if(!t)return;
   t.vol=parseInt(val);
@@ -1396,6 +1431,22 @@ function renderTrackEl(track) {
       <div class="track-tp">Faixa ${s.id}</div>
       <div class="track-file" id="tfile-${s.id}">${s.fileName||''}</div>
     </div>
+    <div class="dots-wrap">
+      <button class="dots-btn" id="ddb-${s.id}" onclick="toggleDD(${s.id},event)">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </button>
+      <div class="dropdown" id="dd-${s.id}">
+        <div class="dd-item" onclick="startEditName(${s.id},event)">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Editar nome
+        </div>
+        <div class="dd-sep"></div>
+        <div class="dd-item danger" onclick="removeTrack(${s.id})">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          Remover faixa
+        </div>
+      </div>
+    </div>
   </div>
   <div class="track-quick">
     <button class="qbtn ${s.muted?'muted':''}" id="mute-${s.id}" onclick="toggleMute(${s.id},event)">M</button>
@@ -1413,22 +1464,6 @@ function renderTrackEl(track) {
     <div class="wv-wrap">
       <canvas id="wave-${s.id}" class="wv-canvas" style="height:46px"></canvas>
       <div class="track-loading" id="tload-${s.id}"><div class="spin"></div></div>
-    </div>
-  </div>
-  <div class="dots-wrap">
-    <button class="dots-btn" id="ddb-${s.id}" onclick="toggleDD(${s.id},event)">
-      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-    </button>
-    <div class="dropdown" id="dd-${s.id}">
-      <div class="dd-item" onclick="startEditName(${s.id},event)">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        Editar nome
-      </div>
-      <div class="dd-sep"></div>
-      <div class="dd-item danger" onclick="removeTrack(${s.id})">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-        Remover faixa
-      </div>
     </div>
   </div>
 </div>
@@ -1600,25 +1635,32 @@ async function loadProject(id, autoPlay = false) {
 
   // ── Phase 2: Load audio in background, one track at a time ──
   _loadAudioInBackground(proj, tInfos, autoPlay);
+  // ── Phase 3: Pre-load adjacent projects so next advance is instant ──
+  setTimeout(() => _preloadAdjacentProjects(), 800);
 }
 
-// Decode an IDB audio record back into an AudioBuffer
-function _decodeAudioRec(audioRec) {
+// Decode an IDB audio record — async chunked for Int16 to avoid freezing main thread
+async function _decodeAudioRec(audioRec) {
   if (!audioRec || !audioRec.channels || !audioRec.channels.length) return null;
   const { channels, sampleRate, length, format } = audioRec;
   const buf = audioCtx.createBuffer(channels.length, length, sampleRate);
-  channels.forEach((ch, c) => {
+  const CHUNK = 65536;
+
+  for (let c = 0; c < channels.length; c++) {
+    const ch = channels[c];
     if (format === 'int16') {
-      // Convert Int16 back to Float32
       const i16 = ch instanceof Int16Array ? ch : new Int16Array(ch);
       const f32 = new Float32Array(length);
-      for (let j = 0; j < length; j++) f32[j] = i16[j] / 32767;
+      for (let j = 0; j < length; j += CHUNK) {
+        const end = Math.min(j + CHUNK, length);
+        for (let k = j; k < end; k++) f32[k] = i16[k] / 32767;
+        await new Promise(r => setTimeout(r, 0)); // yield
+      }
       buf.copyToChannel(f32, c);
     } else {
-      // Legacy Float32 format
       buf.copyToChannel(ch instanceof Float32Array ? ch : new Float32Array(ch), c);
     }
-  });
+  }
   return buf;
 }
 
@@ -1639,7 +1681,7 @@ async function _loadAudioInBackground(proj, tInfos, autoPlay) {
         continue;
       }
 
-      const buf = _decodeAudioRec(audioRec);
+      const buf = await _decodeAudioRec(audioRec);
       if (!buf) { showTrackLoad(track.id, false); continue; }
 
       track.buffer = buf;
@@ -1679,6 +1721,103 @@ async function _loadAudioInBackground(proj, tInfos, autoPlay) {
   } else {
     setSt(tracks.filter(t=>t.buffer).length + ' faixa' + (tracks.length!==1?'s':'') + ' prontas', 'var(--ok)');
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PLAYLIST PRE-LOADER — keeps prev/next project audio warm in RAM
+// ═══════════════════════════════════════════════════════════════
+const _preloadCache = {};
+let _preloadTaskId = 0;
+
+async function _preloadAdjacentProjects() {
+  // Mobile Safari has ~150-200MB RAM limit — preloading would cause crashes
+  if (IS_MOBILE) return;
+  const taskId = ++_preloadTaskId;
+  const curIdx = projects.findIndex(p => p.id === currentProjectId);
+  if (curIdx < 0) return;
+
+  const toPreload = [];
+  if (curIdx + 1 < projects.length) toPreload.push(projects[curIdx + 1]);
+  if (curIdx - 1 >= 0)              toPreload.push(projects[curIdx - 1]);
+
+  for (const proj of toPreload) {
+    if (taskId !== _preloadTaskId) return;
+    if (_preloadCache[proj.id]) continue;
+    try {
+      const projRec = await dbGet('projects', proj.id);
+      if (!projRec || taskId !== _preloadTaskId) continue;
+      const tInfos = projRec.tracks || [];
+      const cachedTracks = [];
+      for (const tInfo of tInfos) {
+        if (taskId !== _preloadTaskId) break;
+        await new Promise(r => setTimeout(r, 0));
+        try {
+          const audioRec = await dbGet('audio', `${proj.id}_${tInfo.id}`).catch(() => null);
+          const ct = {
+            id: tInfo.id, name: tInfo.name, hex: tInfo.hex, fileName: tInfo.fileName,
+            waveformCache: tInfo.peaks ? new Float32Array(tInfo.peaks) : null,
+            vol: tInfo.vol||80, pan: tInfo.pan||0, muted: tInfo.muted||false,
+            soloed: tInfo.soloed||false, phase: tInfo.phase||false,
+            eq: tInfo.eq||{low:{gain:0,freq:80},mid:{gain:0,freq:1000,q:1},high:{gain:0,freq:8000}},
+            sends: tInfo.sends||{reverb:0,delay:0}, buffer: null
+          };
+          if (audioRec) { const buf = await _decodeAudioRec(audioRec); if (buf) ct.buffer = buf; }
+          cachedTracks.push(ct);
+        } catch(e) { cachedTracks.push(null); }
+      }
+      if (taskId === _preloadTaskId) _preloadCache[proj.id] = { projRec, tracks: cachedTracks };
+    } catch(e) { console.warn('Preload failed:', proj.id, e); }
+  }
+  // Evict stale entries — keep only prev, current, next
+  const keepIds = new Set([currentProjectId, ...toPreload.map(p => p.id)]);
+  for (const key of Object.keys(_preloadCache)) {
+    if (!keepIds.has(key)) delete _preloadCache[key];
+  }
+}
+
+async function _loadFromCache(id, autoPlay) {
+  const cached = _preloadCache[id];
+  if (!cached) return false;
+  const { projRec, tracks: cachedTracks } = cached;
+  if (isPlaying) pause();
+  tracks.forEach(t => destroyChain(t.id));
+  tracks = []; nextId = 1; DURATION = 0; pauseOffset = 0; masterPeaks = null;
+  document.getElementById('trackList').innerHTML = '';
+  trackNodes = {};
+  _savedAudioKeys.clear(); _compositeMixRunning = false; allMuted = false;
+  document.getElementById('toggleMuteLbl').textContent = 'Silenciar tudo';
+  document.getElementById('toggleMuteIcon').innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/>';
+  document.getElementById('btnToggleMute').classList.remove('active');
+  initAudio();
+  currentProjectId = projRec.id;
+  currentProjectMeta = { name: projRec.name, artist: projRec.artist, photo: projRec.photo||null };
+  sections = projRec.sections || [];
+  document.getElementById('bpmInput').value = projRec.bpm || 120;
+  DURATION = projRec.duration || 0;
+  for (const ct of cachedTracks) {
+    if (!ct) continue;
+    const track = {
+      id: nextId++, name: ct.name, hex: ct.hex, fileName: ct.fileName,
+      buffer: ct.buffer || null, waveformCache: ct.waveformCache || null,
+      muted: ct.muted, soloed: ct.soloed, vol: ct.vol, pan: ct.pan,
+      phase: ct.phase, settingsOpen: false, eq: ct.eq, sends: ct.sends
+    };
+    if (track.buffer) {
+      DURATION = Math.max(DURATION, track.buffer.duration);
+      _savedAudioKeys.add(`${projRec.id}_${ct.id}`);
+    }
+    tracks.push(track); renderTrackEl(track);
+    if (!track.buffer) showTrackLoad(track.id, true);
+  }
+  tracks.forEach(t => { if (t.waveformCache) drawStaticWave(t.id); });
+  _drawApproxComposite();
+  updateChips(); countSt(); _rebuildMeterCache();
+  drawSectionsOverlay(); saveSession(); renderProjectList();
+  delete _preloadCache[id]; // consumed
+  if (autoPlay && tracks.some(t => t.buffer)) play();
+  setTimeout(() => renderCompositeMix(), 0);
+  setTimeout(() => _preloadAdjacentProjects(), 500);
+  return true;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1877,11 +2016,26 @@ async function restoreSession() {
     projects = session.projects || [];
     document.getElementById('projCount').textContent = projects.length;
     renderProjectList();
+    // Restore photos from IDB (stripped from localStorage to save space)
+    _restoreProjectPhotos().catch(() => {});
     if (session.currentProjectId) {
       const rec = await dbGet('projects', session.currentProjectId);
       if (rec) await loadProject(session.currentProjectId);
     }
   } catch(e) { console.warn('Session restore failed', e); }
+}
+
+// Pull photos back from IDB into the in-memory projects list
+async function _restoreProjectPhotos() {
+  let updated = false;
+  for (const p of projects) {
+    if (p.photo) continue; // already has photo
+    try {
+      const rec = await dbGet('projects', p.id);
+      if (rec && rec.photo) { p.photo = rec.photo; updated = true; }
+    } catch(e) {}
+  }
+  if (updated) renderProjectList();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2236,6 +2390,8 @@ function newProject() {
   trackNodes = {};
   _savedAudioKeys.clear();
   _compositeMixRunning = false;
+  stereoSplit = false;
+  document.getElementById('btnStereoSplit').classList.remove('active');
   // Reset mute state
   allMuted = false;
   document.getElementById('toggleMuteLbl').textContent = 'Silenciar tudo';
@@ -2256,6 +2412,7 @@ document.getElementById('btnPlay').onclick=()=>isPlaying?pause():play();
 document.getElementById('btnStop').onclick=stop;
 document.getElementById('btnLoop').onclick=function(){loopEnabled=!loopEnabled;this.classList.toggle('active',loopEnabled);tracks.forEach(t=>{const n=trackNodes[t.id];if(n&&n.source)n.source.loop=loopEnabled;});};
 document.getElementById('btnMetro').onclick=function(){this.classList.toggle('active');};
+document.getElementById('btnStereoSplit').onclick=toggleStereoSplit;
 
 document.getElementById('pitchSlider').oninput=function(){setPitch(this.value);};
 document.getElementById('btnPitchReset').onclick=()=>{document.getElementById('pitchSlider').value=0;setPitch(0);};
