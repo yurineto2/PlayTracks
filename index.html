@@ -932,31 +932,43 @@ async function addTrackFromFile(file) {
   }
 }
 
-// Save track audio as Int16 binary PCM in async chunks — never blocks the main thread
+// Save track audio to IndexedDB.
+// Mobile: stores Float32 directly (zero-copy memcpy, instant).
+// Desktop: converts to Int16 in async chunks (50% smaller files).
 async function _saveTrackAudio(track) {
   if (!track.buffer || !db || !currentProjectId) return;
   try {
     const { numberOfChannels, sampleRate, length } = track.buffer;
-    const CHUNK = 65536; // process 64K samples at a time to keep frame time <16ms
     const channelBufs = [];
 
-    for (let c = 0; c < numberOfChannels; c++) {
-      const f32 = track.buffer.getChannelData(c);
-      const i16 = new Int16Array(length);
-      for (let j = 0; j < length; j += CHUNK) {
-        const end = Math.min(j + CHUNK, length);
-        for (let k = j; k < end; k++) {
-          i16[k] = Math.max(-32768, Math.min(32767, f32[k] * 32767));
-        }
-        await new Promise(r => setTimeout(r, 0)); // yield between chunks
+    if (IS_MOBILE) {
+      // Zero-copy: Float32Array.slice() is a single native memcpy — no loop, no yield needed
+      for (let c = 0; c < numberOfChannels; c++) {
+        channelBufs.push(track.buffer.getChannelData(c).slice().buffer);
       }
-      channelBufs.push(i16.buffer);
+      const key = `${currentProjectId}_${track.id}`;
+      await dbPut('audio', { key, channels: channelBufs, sampleRate, length, format: 'float32' });
+    } else {
+      // Desktop: Int16 in async chunks (50% smaller, worth the extra time on desktop)
+      const CHUNK = 65536;
+      for (let c = 0; c < numberOfChannels; c++) {
+        const f32 = track.buffer.getChannelData(c);
+        const i16 = new Int16Array(length);
+        for (let j = 0; j < length; j += CHUNK) {
+          const end = Math.min(j + CHUNK, length);
+          for (let k = j; k < end; k++) {
+            i16[k] = Math.max(-32768, Math.min(32767, f32[k] * 32767));
+          }
+          await new Promise(r => setTimeout(r, 0));
+        }
+        channelBufs.push(i16.buffer);
+      }
+      const key = `${currentProjectId}_${track.id}`;
+      await dbPut('audio', { key, channels: channelBufs, sampleRate, length, format: 'int16' });
     }
 
-    const key = `${currentProjectId}_${track.id}`;
-    await dbPut('audio', { key, channels: channelBufs, sampleRate, length, format: 'int16' });
-    _savedAudioKeys.add(key);
-    track.buffer = null; // release from RAM — reload on demand when play() is called
+    _savedAudioKeys.add(`${currentProjectId}_${track.id}`);
+    track.buffer = null; // release from RAM
   } catch(e) { console.warn('Track audio save failed:', e); }
 }
 
@@ -1639,25 +1651,29 @@ async function loadProject(id, autoPlay = false) {
   setTimeout(() => _preloadAdjacentProjects(), 800);
 }
 
-// Decode an IDB audio record — async chunked for Int16 to avoid freezing main thread
+// Decode an IDB audio record back into an AudioBuffer.
+// Mobile float32: zero-copy copyToChannel (single memcpy per channel, instant).
+// Desktop int16: async chunked conversion to avoid UI freezes.
 async function _decodeAudioRec(audioRec) {
   if (!audioRec || !audioRec.channels || !audioRec.channels.length) return null;
   const { channels, sampleRate, length, format } = audioRec;
   const buf = audioCtx.createBuffer(channels.length, length, sampleRate);
-  const CHUNK = 65536;
 
   for (let c = 0; c < channels.length; c++) {
     const ch = channels[c];
     if (format === 'int16') {
+      // Desktop path: convert Int16 → Float32 in chunks
+      const CHUNK = 65536;
       const i16 = ch instanceof Int16Array ? ch : new Int16Array(ch);
       const f32 = new Float32Array(length);
       for (let j = 0; j < length; j += CHUNK) {
         const end = Math.min(j + CHUNK, length);
         for (let k = j; k < end; k++) f32[k] = i16[k] / 32767;
-        await new Promise(r => setTimeout(r, 0)); // yield
+        await new Promise(r => setTimeout(r, 0));
       }
       buf.copyToChannel(f32, c);
     } else {
+      // Mobile path (float32): single native memcpy — no loop
       buf.copyToChannel(ch instanceof Float32Array ? ch : new Float32Array(ch), c);
     }
   }
