@@ -657,19 +657,24 @@ function destroyChain(id) {
   delete trackNodes[id];
 }
 
-// Load audio buffer from IDB on demand (may have been released to save RAM)
+// Load audio buffers on demand — sequential to avoid RAM spikes on mobile
 async function _ensureBuffers() {
-  const missing = tracks.filter(t => !t.buffer && t.waveformCache); // has peaks but no buffer
+  const missing = tracks.filter(t => !t.buffer && t.waveformCache);
   if (!missing.length) return;
   setSt('Preparando áudio...', 'var(--warn)');
-  await Promise.all(missing.map(async track => {
+  for (const track of missing) {
     try {
-      const audioRec = await dbGet('audio', `${currentProjectId}_${track.id}`).catch(() => null);
-      if (!audioRec) return;
+      // Use stored _idbKey if available (avoids ID drift), fall back to computed key
+      const key = track._idbKey || `${currentProjectId}_${track.id}`;
+      const audioRec = await dbGet('audio', key).catch(() => null);
+      if (!audioRec) continue;
       const buf = await _decodeAudioRec(audioRec);
-      if (buf) { track.buffer = buf; _savedAudioKeys.add(`${currentProjectId}_${track.id}`); }
+      if (buf) {
+        track.buffer = buf;
+        _savedAudioKeys.add(key);
+      }
     } catch(e) { console.warn('On-demand load failed:', e); }
-  }));
+  }
 }
 
 function startSources() {
@@ -946,8 +951,9 @@ async function _saveTrackAudio(track) {
       for (let c = 0; c < numberOfChannels; c++) {
         channelBufs.push(track.buffer.getChannelData(c).slice().buffer);
       }
-      const key = `${currentProjectId}_${track.id}`;
-      await dbPut('audio', { key, channels: channelBufs, sampleRate, length, format: 'float32' });
+    const key = `${currentProjectId}_${track.id}`;
+    await dbPut('audio', { key, channels: channelBufs, sampleRate, length, format: 'float32' });
+    track._idbKey = key; // store for later _ensureBuffers lookups
     } else {
       // Desktop: Int16 in async chunks (50% smaller, worth the extra time on desktop)
       const CHUNK = 65536;
@@ -965,6 +971,7 @@ async function _saveTrackAudio(track) {
       }
       const key = `${currentProjectId}_${track.id}`;
       await dbPut('audio', { key, channels: channelBufs, sampleRate, length, format: 'int16' });
+      track._idbKey = key;
     }
 
     _savedAudioKeys.add(`${currentProjectId}_${track.id}`);
@@ -1623,8 +1630,9 @@ async function loadProject(id, autoPlay = false) {
     const track = {
       id: nextId++, name: tInfo.name, hex: tInfo.hex, fileName: tInfo.fileName,
       buffer: null,
-      // Restore waveform from stored peaks (no audio needed!)
       waveformCache: tInfo.peaks ? new Float32Array(tInfo.peaks) : null,
+      // Store the real IDB key so _ensureBuffers can find audio even if IDs drifted
+      _idbKey: `${proj.id}_${tInfo.id}`,
       muted: tInfo.muted||false, soloed: tInfo.soloed||false, vol: tInfo.vol||80,
       pan: tInfo.pan||0, phase: tInfo.phase||false, settingsOpen: false,
       eq: tInfo.eq||{low:{gain:0,freq:80},mid:{gain:0,freq:1000,q:1},high:{gain:0,freq:8000}},
@@ -1691,7 +1699,8 @@ async function _loadAudioInBackground(proj, tInfos, autoPlay) {
     await new Promise(r => setTimeout(r, 0)); // yield — keep UI alive
 
     try {
-      const audioRec = await dbGet('audio', `${proj.id}_${tInfo.id}`).catch(() => null);
+      const idbKey = track._idbKey || `${proj.id}_${tInfo.id}`;
+      const audioRec = await dbGet('audio', idbKey).catch(() => null);
       if (!audioRec || !audioRec.channels || !audioRec.channels.length) {
         showTrackLoad(track.id, false);
         continue;
@@ -1701,10 +1710,11 @@ async function _loadAudioInBackground(proj, tInfos, autoPlay) {
       if (!buf) { showTrackLoad(track.id, false); continue; }
 
       track.buffer = buf;
+      track._idbKey = idbKey; // ensure it's set for future _ensureBuffers calls
       DURATION = Math.max(DURATION, buf.duration);
       if (!track.waveformCache) { cacheWave(track, buf); drawStaticWave(track.id); }
       showTrackLoad(track.id, false);
-      _savedAudioKeys.add(`${proj.id}_${tInfo.id}`);
+      _savedAudioKeys.add(idbKey);
       anyLoaded = true;
 
       // Update progress — show how many tracks are loaded
