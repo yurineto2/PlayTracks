@@ -102,7 +102,16 @@ header{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
 .track-row:hover{background:rgba(255,255,255,.015)}
 .track-row.settings-open{background:rgba(232,114,26,.04)}
 .track-stripe{width:4px}
-.track-info{display:flex;align-items:center;gap:9px;padding:0 10px 0 12px;border-right:1px solid var(--border);min-width:0;pointer-events:none;position:relative}
+/* Track drag reorder */
+.track-block{cursor:default;transition:opacity .15s,transform .15s}
+.track-block.drag-source{opacity:.4}
+.track-block.drag-over-top{border-top:2px solid var(--accent)}
+.track-block.drag-over-bot{border-bottom:2px solid var(--accent)}
+.track-handle{width:14px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.5px;cursor:grab;opacity:.25;padding:2px;touch-action:none;pointer-events:all}
+.track-handle:active{cursor:grabbing}
+.track-handle-bar{width:8px;height:1.5px;border-radius:1px;background:var(--txt3)}
+.track-info:hover .track-handle,.track-block:hover .track-handle{opacity:.6}
+.track-info{display:flex;align-items:center;gap:7px;padding:0 8px 0 6px;border-right:1px solid var(--border);min-width:0;pointer-events:none;position:relative}
 .track-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .ti-body{min-width:0;flex:1}
 .track-nm{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:22px}
@@ -938,43 +947,37 @@ async function addTrackFromFile(file) {
 }
 
 // Save track audio to IndexedDB.
-// Mobile: stores Float32 directly (zero-copy memcpy, instant).
-// Desktop: converts to Int16 in async chunks (50% smaller files).
+// Mobile: stores Float32 directly (zero-copy, instant).
+// Desktop: converts to Int16 in async chunks (50% smaller).
 async function _saveTrackAudio(track) {
   if (!track.buffer || !db || !currentProjectId) return;
+  const key = track._idbKey || `${currentProjectId}_${track.id}`;
   try {
     const { numberOfChannels, sampleRate, length } = track.buffer;
     const channelBufs = [];
 
     if (IS_MOBILE) {
-      // Zero-copy: Float32Array.slice() is a single native memcpy — no loop, no yield needed
       for (let c = 0; c < numberOfChannels; c++) {
         channelBufs.push(track.buffer.getChannelData(c).slice().buffer);
       }
-    const key = `${currentProjectId}_${track.id}`;
-    await dbPut('audio', { key, channels: channelBufs, sampleRate, length, format: 'float32' });
-    track._idbKey = key; // store for later _ensureBuffers lookups
+      await dbPut('audio', { key, channels: channelBufs, sampleRate, length, format: 'float32' });
     } else {
-      // Desktop: Int16 in async chunks (50% smaller, worth the extra time on desktop)
       const CHUNK = 65536;
       for (let c = 0; c < numberOfChannels; c++) {
         const f32 = track.buffer.getChannelData(c);
         const i16 = new Int16Array(length);
         for (let j = 0; j < length; j += CHUNK) {
           const end = Math.min(j + CHUNK, length);
-          for (let k = j; k < end; k++) {
-            i16[k] = Math.max(-32768, Math.min(32767, f32[k] * 32767));
-          }
+          for (let k = j; k < end; k++) i16[k] = Math.max(-32768, Math.min(32767, f32[k] * 32767));
           await new Promise(r => setTimeout(r, 0));
         }
         channelBufs.push(i16.buffer);
       }
-      const key = `${currentProjectId}_${track.id}`;
       await dbPut('audio', { key, channels: channelBufs, sampleRate, length, format: 'int16' });
-      track._idbKey = key;
     }
 
-    _savedAudioKeys.add(`${currentProjectId}_${track.id}`);
+    track._idbKey = key;
+    _savedAudioKeys.add(key); // use unified key — matches _idbKey
     track.buffer = null; // release from RAM
   } catch(e) { console.warn('Track audio save failed:', e); }
 }
@@ -1414,6 +1417,111 @@ function startEditName(id,e) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// TRACK DRAG REORDER
+// ═══════════════════════════════════════════════════════════════
+let _dragTrackId = null;
+
+function _wireTrackDrag(block, id) {
+  // Mouse drag
+  block.draggable = true;
+  block.addEventListener('dragstart', e => {
+    if (e.target.closest('.track-handle') === null) { e.preventDefault(); return; }
+    _dragTrackId = id;
+    block.classList.add('drag-source');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(id));
+  });
+  block.addEventListener('dragend', () => {
+    block.classList.remove('drag-source');
+    document.querySelectorAll('.track-block').forEach(b => b.classList.remove('drag-over-top','drag-over-bot'));
+    _dragTrackId = null;
+  });
+  block.addEventListener('dragover', e => {
+    if (_dragTrackId === null || _dragTrackId === id) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const rect = block.getBoundingClientRect();
+    const mid = rect.top + rect.height / 2;
+    document.querySelectorAll('.track-block').forEach(b => b.classList.remove('drag-over-top','drag-over-bot'));
+    block.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bot');
+  });
+  block.addEventListener('dragleave', () => block.classList.remove('drag-over-top','drag-over-bot'));
+  block.addEventListener('drop', e => {
+    e.preventDefault();
+    block.classList.remove('drag-over-top','drag-over-bot');
+    if (_dragTrackId === null || _dragTrackId === id) return;
+    const rect = block.getBoundingClientRect();
+    const before = e.clientY < rect.top + rect.height / 2;
+    reorderTrack(_dragTrackId, id, before);
+  });
+
+  // Touch drag (long-press → drag)
+  let _touchTimer = null, _touchStartY = 0, _dragging = false;
+  block.addEventListener('touchstart', e => {
+    if (!e.target.closest('.track-handle')) return;
+    _touchStartY = e.touches[0].clientY;
+    _touchTimer = setTimeout(() => { _dragging = true; _dragTrackId = id; block.classList.add('drag-source'); }, 300);
+  }, { passive: true });
+  block.addEventListener('touchmove', e => {
+    if (!_dragging) { clearTimeout(_touchTimer); return; }
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    const el = document.elementFromPoint(e.touches[0].clientX, y);
+    const targetBlock = el ? el.closest('.track-block') : null;
+    document.querySelectorAll('.track-block').forEach(b => b.classList.remove('drag-over-top','drag-over-bot'));
+    if (targetBlock && targetBlock !== block) {
+      const rect = targetBlock.getBoundingClientRect();
+      targetBlock.classList.add(y < rect.top + rect.height / 2 ? 'drag-over-top' : 'drag-over-bot');
+    }
+  }, { passive: false });
+  block.addEventListener('touchend', e => {
+    clearTimeout(_touchTimer);
+    if (!_dragging) { _dragTrackId = null; return; }
+    _dragging = false;
+    block.classList.remove('drag-source');
+    document.querySelectorAll('.track-block').forEach(b => {
+      const isBefore = b.classList.contains('drag-over-top');
+      const isAfter = b.classList.contains('drag-over-bot');
+      b.classList.remove('drag-over-top','drag-over-bot');
+      if ((isBefore || isAfter) && b !== block) {
+        const targetId = parseInt(b.id.replace('block-',''));
+        reorderTrack(_dragTrackId, targetId, isBefore);
+      }
+    });
+    _dragTrackId = null;
+  });
+}
+
+function reorderTrack(fromId, toId, before) {
+  const fromIdx = tracks.findIndex(t => t.id === fromId);
+  const toIdx   = tracks.findIndex(t => t.id === toId);
+  if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return;
+  const [moved] = tracks.splice(fromIdx, 1);
+  const insertAt = before ? (fromIdx < toIdx ? toIdx - 1 : toIdx) : (fromIdx < toIdx ? toIdx : toIdx + 1);
+  tracks.splice(Math.max(0, Math.min(tracks.length, insertAt)), 0, moved);
+  // Re-render the track list in new order
+  const wrap = document.getElementById('trackList');
+  wrap.innerHTML = '';
+  tracks.forEach(t => renderTrackEl(t));
+  // Restore static waveforms and sliders
+  requestAnimationFrame(() => {
+    tracks.forEach(t => {
+      if (t.waveformCache) drawStaticWave(t.id);
+      fillSlider(document.getElementById('vol-'+t.id), t.hex);
+      fillSlider(document.getElementById('pan-'+t.id), 'var(--accent)', true);
+      fillSlider(document.getElementById('eqlow-'+t.id), '#4FC3FF', true);
+      fillSlider(document.getElementById('eqmid-'+t.id), t.hex, true);
+      fillSlider(document.getElementById('eqhigh-'+t.id), '#FF8C42', true);
+      fillSlider(document.getElementById('eqmidq-'+t.id), 'var(--txt2)');
+      fillSlider(document.getElementById('rev-'+t.id), '#9B5EFF');
+      fillSlider(document.getElementById('del-'+t.id), '#20C8FF');
+    });
+    _rebuildMeterCache();
+  });
+  _flushProjectMeta().catch(() => saveSession()); // persist new order
+}
+
+// ═══════════════════════════════════════════════════════════════
 // DROPDOWN
 // ═══════════════════════════════════════════════════════════════
 function toggleDD(id,e){e.stopPropagation();if(openDropdown===id){closeDD();return;}closeDD();openDropdown=id;const dd=document.getElementById('dd-'+id);const btn=document.getElementById('ddb-'+id);if(dd)dd.classList.add('open');if(btn)btn.classList.add('open');}
@@ -1444,6 +1552,10 @@ function renderTrackEl(track) {
 <div class="track-row" id="row-${s.id}">
   <div class="track-stripe" style="background:${s.hex}"></div>
   <div class="track-info">
+    <div class="track-handle" title="Arrastar para reordenar">
+      <div class="track-handle-bar"></div><div class="track-handle-bar"></div>
+      <div class="track-handle-bar"></div><div class="track-handle-bar"></div>
+    </div>
     <div class="track-dot" style="background:${s.hex};box-shadow:0 0 5px ${s.hex}40"></div>
     <div class="ti-body">
       <div class="track-nm-wrap" id="tnwrap-${s.id}"><span class="track-nm" id="tname-${s.id}">${s.name}</span></div>
@@ -1520,6 +1632,8 @@ function renderTrackEl(track) {
 </div>`;
   wrap.appendChild(block);
   document.getElementById('row-'+track.id).addEventListener('click', e=>toggleTrackSettings(track.id,e));
+  // Drag-to-reorder wiring
+  _wireTrackDrag(block, track.id);
   requestAnimationFrame(()=>{
     fillSlider(document.getElementById('vol-'+track.id),track.hex);
     fillSlider(document.getElementById('pan-'+track.id),'var(--accent)',true);
@@ -1999,11 +2113,16 @@ async function autoBackup() {
   if (!tracks.length || !db) { saveSession(); return; }
   if (!currentProjectId) currentProjectId = 'autosave_' + Date.now();
   for (const track of tracks) {
-    if (!track.buffer) continue;
-    const key = `${currentProjectId}_${track.id}`;
-    if (_savedAudioKeys.has(key)) continue; // already saved this session
+    const key = track._idbKey || `${currentProjectId}_${track.id}`;
+    if (_savedAudioKeys.has(key)) continue; // already saved
+    if (!track.buffer) {
+      // Buffer was released — check IDB directly to confirm it exists
+      const exists = await dbGet('audio', key).catch(() => null);
+      if (exists) { _savedAudioKeys.add(key); continue; } // already in IDB
+      // Not in IDB and no buffer — cannot save, skip
+      continue;
+    }
     await _saveTrackAudio(track);
-    // _saveTrackAudio adds to _savedAudioKeys on success
   }
   await _flushProjectMeta();
 }
