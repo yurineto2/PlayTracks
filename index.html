@@ -668,6 +668,10 @@ function destroyChain(id) {
 
 // Load audio buffers on demand — sequential to avoid RAM spikes on mobile
 async function _ensureBuffers() {
+  // Wait for background load to finish first — prevents double decode
+  if (_bgLoadRunning) {
+    await new Promise(r => { const iv = setInterval(() => { if (!_bgLoadRunning) { clearInterval(iv); r(); } }, 100); });
+  }
   const missing = tracks.filter(t => !t.buffer && t.waveformCache);
   if (!missing.length) return;
   setSt('Preparando áudio...', 'var(--warn)');
@@ -1802,7 +1806,10 @@ async function _decodeAudioRec(audioRec) {
   return buf;
 }
 
+let _bgLoadRunning = false; // prevents _ensureBuffers racing with background load
+
 async function _loadAudioInBackground(proj, tInfos, autoPlay) {
+  _bgLoadRunning = true;
   let anyLoaded = false;
 
   for (let i = 0; i < tInfos.length; i++) {
@@ -1824,12 +1831,15 @@ async function _loadAudioInBackground(proj, tInfos, autoPlay) {
       if (!buf) { showTrackLoad(track.id, false); continue; }
 
       track.buffer = buf;
-      track._idbKey = idbKey; // ensure it's set for future _ensureBuffers calls
+      track._idbKey = idbKey;
       DURATION = Math.max(DURATION, buf.duration);
       if (!track.waveformCache) { cacheWave(track, buf); drawStaticWave(track.id); }
       showTrackLoad(track.id, false);
       _savedAudioKeys.add(idbKey);
       anyLoaded = true;
+      // Mobile: release buffer after peak caching — keep RAM near zero
+      // _ensureBuffers() reloads just-in-time when play() is called
+      if (IS_MOBILE && !autoPlay) { track.buffer = null; }
 
       // Update progress — show how many tracks are loaded
       const loaded = tracks.filter(t => t.buffer).length;
@@ -1842,13 +1852,12 @@ async function _loadAudioInBackground(proj, tInfos, autoPlay) {
     }
   }
 
-  if (!anyLoaded) return;
+  if (!anyLoaded) { _bgLoadRunning = false; return; }
+  _bgLoadRunning = false; // release before play so _ensureBuffers can run
 
   updateChips(); countSt(); _rebuildMeterCache();
-  // Render composite now that ALL tracks are loaded
   setTimeout(() => renderCompositeMix(), 0);
 
-  // Only auto-play AFTER all tracks have loaded — prevents desync
   if (autoPlay) {
     const readyCount = tracks.filter(t => t.buffer).length;
     const expectedCount = tInfos.length;
@@ -2114,13 +2123,14 @@ async function autoBackup() {
   if (!currentProjectId) currentProjectId = 'autosave_' + Date.now();
   for (const track of tracks) {
     const key = track._idbKey || `${currentProjectId}_${track.id}`;
-    if (_savedAudioKeys.has(key)) continue; // already saved
+    if (_savedAudioKeys.has(key)) continue; // already saved this session
     if (!track.buffer) {
-      // Buffer was released — check IDB directly to confirm it exists
+      // Buffer was released to RAM after save — trust _savedAudioKeys
+      // On mobile, avoid dbGet per-track (slow). Mark as saved and move on.
+      if (IS_MOBILE) { _savedAudioKeys.add(key); continue; }
       const exists = await dbGet('audio', key).catch(() => null);
-      if (exists) { _savedAudioKeys.add(key); continue; } // already in IDB
-      // Not in IDB and no buffer — cannot save, skip
-      continue;
+      if (exists) { _savedAudioKeys.add(key); continue; }
+      continue; // not in IDB and no buffer — skip
     }
     await _saveTrackAudio(track);
   }
@@ -2152,6 +2162,7 @@ function saveSession() {
 async function restoreSession() {
   // Never restore if user already has tracks loaded — would wipe unsaved work
   if (tracks.length > 0) return;
+  if (isLoadingProject || isTransitioning) return; // background load running
   try {
     const raw = localStorage.getItem('playtracks_session');
     if (!raw) return;
@@ -2188,6 +2199,17 @@ async function _restoreProjectPhotos() {
 // ═══════════════════════════════════════════════════════════════
 // project bar removed — meta shown only in save modal
 
+function _reorderProject(fromId, toId) {
+  if (!fromId || !toId || fromId === toId) return;
+  const fromIdx = projects.findIndex(p => p.id === fromId);
+  const toIdx   = projects.findIndex(p => p.id === toId);
+  if (fromIdx < 0 || toIdx < 0) return;
+  const [moved] = projects.splice(fromIdx, 1);
+  projects.splice(toIdx, 0, moved);
+  saveSession();
+  renderProjectList();
+}
+
 function renderProjectList() {
   const list = document.getElementById('projList');
   list.innerHTML = '';
@@ -2209,7 +2231,6 @@ function renderProjectList() {
       (isTransit ? ' transitioning' : '');
     card.dataset.projId = proj.id;
     card.dataset.idx = idx;
-    card.draggable = true;
 
     const photoEl = proj.photo
       ? `<img class="pc-photo" src="${proj.photo}" alt="">`
@@ -2259,28 +2280,55 @@ function renderProjectList() {
       closeDrawer();
     });
 
-    // ── Drag-to-reorder ──
+    // ── Drag-to-reorder (mouse + touch) ──
+    card.draggable = true;
     card.addEventListener('dragstart', e => {
+      if (e.target.closest('.pc-actions')) { e.preventDefault(); return; }
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', proj.id);
-      card.style.opacity = '.4';
+      setTimeout(() => card.classList.add('transitioning'), 0);
     });
-    card.addEventListener('dragend', () => { card.style.opacity = ''; list.querySelectorAll('.drag-over').forEach(c=>c.classList.remove('drag-over')); });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('transitioning');
+      list.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    });
     card.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; card.classList.add('drag-over'); });
     card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
     card.addEventListener('drop', e => {
       e.preventDefault();
       card.classList.remove('drag-over');
-      const fromId = e.dataTransfer.getData('text/plain');
-      const toId = proj.id;
-      if (fromId === toId) return;
-      const fromIdx = projects.findIndex(p => p.id === fromId);
-      const toIdx = projects.findIndex(p => p.id === toId);
-      if (fromIdx < 0 || toIdx < 0) return;
-      const [moved] = projects.splice(fromIdx, 1);
-      projects.splice(toIdx, 0, moved);
-      saveSession();
-      renderProjectList();
+      _reorderProject(e.dataTransfer.getData('text/plain'), proj.id);
+    });
+    // Touch drag support
+    let _projTouchId = null, _projTouchTimer = null, _projDragging = false;
+    card.querySelector('.pc-drag').addEventListener('touchstart', e => {
+      _projTouchId = proj.id;
+      _projTouchTimer = setTimeout(() => {
+        _projDragging = true;
+        card.classList.add('transitioning');
+      }, 250);
+    }, { passive: true });
+    card.addEventListener('touchmove', e => {
+      if (!_projDragging) { clearTimeout(_projTouchTimer); return; }
+      e.preventDefault();
+      const touch = e.touches[0];
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      const target = el && el.closest('.proj-card');
+      list.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+      if (target && target !== card) target.classList.add('drag-over');
+    }, { passive: false });
+    card.addEventListener('touchend', e => {
+      clearTimeout(_projTouchTimer);
+      if (!_projDragging) { _projTouchId = null; return; }
+      _projDragging = false;
+      card.classList.remove('transitioning');
+      const over = list.querySelector('.proj-card.drag-over');
+      list.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+      if (over && _projTouchId) {
+        const toId = over.dataset.projId;
+        if (toId && toId !== _projTouchId) _reorderProject(_projTouchId, toId);
+      }
+      _projTouchId = null;
     });
 
     list.appendChild(card);
@@ -2671,6 +2719,15 @@ document.addEventListener('drop', async e => {
   if (audioFiles.length) await loadFiles(audioFiles);
 });
 
+// Prevent uncaught async errors from crashing/reloading the page on mobile
+window.addEventListener('unhandledrejection', e => {
+  console.warn('[PlayTracks] Unhandled rejection:', e.reason);
+  e.preventDefault();
+});
+window.addEventListener('error', e => {
+  console.warn('[PlayTracks] Uncaught error:', e.message);
+});
+
 // ═══════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════
@@ -2681,35 +2738,59 @@ document.getElementById('trackList').innerHTML=buildEmpty();
   drawMasterWaveform();
 })();
 
-// iOS Safari: page restored from bfcache (back/forward) without JS re-running
+// ── Mobile resilience: handle iOS bfcache + foreground restore ──
+let _wasHidden = false;
+let _isRestoring = false; // lock: never run two restores at once
+
+function _resumeAudio() {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+}
+
+// A "real" empty state: tracks array is empty AND no background load is running
+function _genuinelyEmpty() {
+  return tracks.length === 0 && !isLoadingProject && !isTransitioning && !_isRestoring;
+}
+
+async function _safeRestore() {
+  if (_isRestoring || !db) return;
+  if (!_genuinelyEmpty()) return; // tracks loading in background — don't restart
+  _isRestoring = true;
+  try { await restoreSession(); }
+  catch(e) { console.warn('Safe restore failed:', e); }
+  finally { _isRestoring = false; }
+}
+
+// iOS bfcache: JS state is intact, only AudioContext needs resuming
 window.addEventListener('pageshow', e => {
-  // persisted=true means page came from bfcache — JS state was fully preserved,
-  // but AudioContext may be suspended. Resume it, don't reload anything.
-  if (e.persisted) {
-    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    // If tracks somehow got wiped (very rare), try a full restore
-    if (!tracks.length && db) restoreSession().catch(() => {});
+  _resumeAudio();
+  if (e.persisted && _genuinelyEmpty()) {
+    // Page came from bfcache but state was wiped — full restore needed
+    setTimeout(() => _safeRestore(), 200);
   }
 });
 
-// Android / iOS: came back to foreground
-// Only restore if we genuinely have nothing — NOT on every focus event
-let _wasHidden = false;
+// Android/iOS foreground: save on hide, restore only if genuinely empty on show
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
     _wasHidden = true;
-    // Flush any pending state
     saveSession();
+    // Mobile: release audio buffers to free RAM before iOS kills the page
+    if (IS_MOBILE) {
+      if (isPlaying) pause();
+      tracks.forEach(t => {
+        if (t.buffer && t.waveformCache) t.buffer = null;
+      });
+    }
     return;
   }
-  // visible — only act if page was hidden AND we have no tracks at all
   if (_wasHidden) {
     _wasHidden = false;
-    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    // Only trigger restore if tracks are genuinely gone AND db is open
-    if (!tracks.length && db && !isTransitioning) {
-      restoreSession().catch(() => {});
-    }
+    _resumeAudio();
+    // Wait 300ms for the JS engine to stabilise before checking state
+    // This prevents false "empty" readings during background audio load
+    setTimeout(() => {
+      if (_genuinelyEmpty()) _safeRestore();
+    }, 300);
   }
 });
 </script>
