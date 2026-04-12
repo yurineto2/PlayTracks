@@ -666,26 +666,30 @@ function destroyChain(id) {
   delete trackNodes[id];
 }
 
-// Load audio buffers on demand — sequential to avoid RAM spikes on mobile
+// Load missing audio buffers on demand — parallel IDB reads, then sequential decode
 async function _ensureBuffers() {
-  // Wait for background load to finish first — prevents double decode
-  if (_bgLoadRunning) {
-    await new Promise(r => { const iv = setInterval(() => { if (!_bgLoadRunning) { clearInterval(iv); r(); } }, 100); });
-  }
   const missing = tracks.filter(t => !t.buffer && t.waveformCache);
   if (!missing.length) return;
+  // If background load is already fetching these, wait for it rather than double-reading
+  if (_bgLoadRunning) {
+    await new Promise(r => {
+      const check = () => { if (!_bgLoadRunning) r(); else setTimeout(check, 50); };
+      setTimeout(check, 50);
+    });
+    if (!tracks.filter(t => !t.buffer && t.waveformCache).length) return; // bg load got them
+  }
   setSt('Preparando áudio...', 'var(--warn)');
-  for (const track of missing) {
+  const keys = missing.map(t => t._idbKey || `${currentProjectId}_${t.id}`);
+  // Parallel IDB reads
+  const recs = await Promise.all(keys.map(k => dbGet('audio', k).catch(() => null)));
+  // Sequential decode (avoids simultaneous large allocations)
+  for (let i = 0; i < missing.length; i++) {
+    const track = missing[i];
+    const rec = recs[i];
+    if (!rec) continue;
     try {
-      // Use stored _idbKey if available (avoids ID drift), fall back to computed key
-      const key = track._idbKey || `${currentProjectId}_${track.id}`;
-      const audioRec = await dbGet('audio', key).catch(() => null);
-      if (!audioRec) continue;
-      const buf = await _decodeAudioRec(audioRec);
-      if (buf) {
-        track.buffer = buf;
-        _savedAudioKeys.add(key);
-      }
+      const buf = await _decodeAudioRec(rec);
+      if (buf) { track.buffer = buf; _savedAudioKeys.add(keys[i]); }
     } catch(e) { console.warn('On-demand load failed:', e); }
   }
 }
@@ -1777,59 +1781,70 @@ async function loadProject(id, autoPlay = false) {
   setTimeout(() => _preloadAdjacentProjects(), 800);
 }
 
-// Decode an IDB audio record back into an AudioBuffer.
-// Mobile float32: zero-copy copyToChannel (single memcpy per channel, instant).
-// Desktop int16: async chunked conversion to avoid UI freezes.
+// Decode IDB audio record → AudioBuffer.
+// float32 (mobile): sync, zero-copy copyToChannel — ~1ms per channel.
+// int16 (desktop): async chunked Int16→Float32 conversion.
+function _decodeAudioRecSync(audioRec) {
+  // Fast sync path for float32 (mobile) — no async overhead at all
+  if (!audioRec || !audioRec.channels || !audioRec.channels.length) return null;
+  const { channels, sampleRate, length } = audioRec;
+  const buf = audioCtx.createBuffer(channels.length, length, sampleRate);
+  channels.forEach((ch, c) =>
+    buf.copyToChannel(ch instanceof Float32Array ? ch : new Float32Array(ch), c)
+  );
+  return buf;
+}
+
 async function _decodeAudioRec(audioRec) {
   if (!audioRec || !audioRec.channels || !audioRec.channels.length) return null;
   const { channels, sampleRate, length, format } = audioRec;
+  if (format !== 'int16') {
+    // float32: sync zero-copy — instant on mobile
+    return _decodeAudioRecSync(audioRec);
+  }
+  // int16: async chunked conversion (desktop only)
   const buf = audioCtx.createBuffer(channels.length, length, sampleRate);
-
+  const CHUNK = 65536;
   for (let c = 0; c < channels.length; c++) {
     const ch = channels[c];
-    if (format === 'int16') {
-      // Desktop path: convert Int16 → Float32 in chunks
-      const CHUNK = 65536;
-      const i16 = ch instanceof Int16Array ? ch : new Int16Array(ch);
-      const f32 = new Float32Array(length);
-      for (let j = 0; j < length; j += CHUNK) {
-        const end = Math.min(j + CHUNK, length);
-        for (let k = j; k < end; k++) f32[k] = i16[k] / 32767;
-        await new Promise(r => setTimeout(r, 0));
-      }
-      buf.copyToChannel(f32, c);
-    } else {
-      // Mobile path (float32): single native memcpy — no loop
-      buf.copyToChannel(ch instanceof Float32Array ? ch : new Float32Array(ch), c);
+    const i16 = ch instanceof Int16Array ? ch : new Int16Array(ch);
+    const f32 = new Float32Array(length);
+    for (let j = 0; j < length; j += CHUNK) {
+      const end = Math.min(j + CHUNK, length);
+      for (let k = j; k < end; k++) f32[k] = i16[k] / 32767;
+      await new Promise(r => setTimeout(r, 0));
     }
+    buf.copyToChannel(f32, c);
   }
   return buf;
 }
 
-let _bgLoadRunning = false; // prevents _ensureBuffers racing with background load
+let _bgLoadRunning = false;
 
 async function _loadAudioInBackground(proj, tInfos, autoPlay) {
   _bgLoadRunning = true;
   let anyLoaded = false;
 
-  for (let i = 0; i < tInfos.length; i++) {
-    const tInfo = tInfos[i];
-    const track = tracks[i];
-    if (!track || track.buffer) continue;
+  // Step A: Read ALL tracks from IDB in parallel — much faster than sequential
+  const entries = tInfos.map((tInfo, i) => ({
+    tInfo, track: tracks[i],
+    idbKey: (tracks[i] && tracks[i]._idbKey) || `${proj.id}_${tInfo.id}`
+  })).filter(e => e.track && !e.track.buffer);
 
-    await new Promise(r => setTimeout(r, 0)); // yield — keep UI alive
+  const audioRecs = await Promise.all(
+    entries.map(e => dbGet('audio', e.idbKey).catch(() => null))
+  );
 
+  // Step B: Decode each buffer (sync for float32, async for int16)
+  for (let i = 0; i < entries.length; i++) {
+    const { tInfo, track, idbKey } = entries[i];
+    const audioRec = audioRecs[i];
+    if (!audioRec || !audioRec.channels || !audioRec.channels.length) {
+      showTrackLoad(track.id, false); continue;
+    }
     try {
-      const idbKey = track._idbKey || `${proj.id}_${tInfo.id}`;
-      const audioRec = await dbGet('audio', idbKey).catch(() => null);
-      if (!audioRec || !audioRec.channels || !audioRec.channels.length) {
-        showTrackLoad(track.id, false);
-        continue;
-      }
-
-      const buf = await _decodeAudioRec(audioRec);
+      const buf = await _decodeAudioRec(audioRec); // sync for float32
       if (!buf) { showTrackLoad(track.id, false); continue; }
-
       track.buffer = buf;
       track._idbKey = idbKey;
       DURATION = Math.max(DURATION, buf.duration);
@@ -1837,23 +1852,16 @@ async function _loadAudioInBackground(proj, tInfos, autoPlay) {
       showTrackLoad(track.id, false);
       _savedAudioKeys.add(idbKey);
       anyLoaded = true;
-      // Mobile: release buffer after peak caching — keep RAM near zero
-      // _ensureBuffers() reloads just-in-time when play() is called
-      if (IS_MOBILE && !autoPlay) { track.buffer = null; }
-
-      // Update progress — show how many tracks are loaded
-      const loaded = tracks.filter(t => t.buffer).length;
-      if (loaded < tInfos.length) {
-        setSt(`Carregando áudio ${loaded}/${tInfos.length}...`, 'var(--warn)');
-      }
+      if (IS_MOBILE && !autoPlay) track.buffer = null; // release RAM, reload at play()
     } catch(e) {
       showTrackLoad(track.id, false);
-      console.warn('Audio background load failed:', e);
+      console.warn('Audio load failed:', e);
     }
+    await new Promise(r => setTimeout(r, 0)); // yield between decodes
   }
 
   if (!anyLoaded) { _bgLoadRunning = false; return; }
-  _bgLoadRunning = false; // release before play so _ensureBuffers can run
+  _bgLoadRunning = false;
 
   updateChips(); countSt(); _rebuildMeterCache();
   setTimeout(() => renderCompositeMix(), 0);
