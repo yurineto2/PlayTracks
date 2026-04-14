@@ -278,10 +278,11 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
   .header-chips .chip:nth-child(n+3) { display: none; }
   header { padding: 10px 16px; }
 
-  /* Transport: wrap, hide separators */
+  /* Transport: wrap, hide pitch/vol/separators */
   .transport { flex-wrap: wrap; row-gap: 5px; padding: 8px 16px; }
   .transport .sep { display: none; }
-  .mvol { margin-left: 0; }
+  .pitch-ctrl { display: none; }
+  .mvol { display: none; }
 
   /* Settings panel: 2 columns */
   .sp-inner { grid-template-columns: 1fr 1fr; }
@@ -290,6 +291,10 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
   /* Footer */
   footer { padding: 8px 16px; }
   .foot-acts { flex-wrap: wrap; gap: 5px; }
+
+  /* Float buttons: lift above wrapped footer */
+  .float-proj { bottom: 100px; }
+  .float-new  { bottom: 152px; }
 }
 
 /* ════════════════════════════════════════════════════
@@ -430,21 +435,24 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
   <canvas class="tl-wv-canvas" id="tlWaveform"></canvas>
   <canvas class="tl-sections-canvas" id="tlSections"></canvas>
   <div class="playhead-line" id="masterPlayhead" style="left:0"></div>
-  <div class="map-toolbar" onmousedown="event.stopPropagation()">
-    <button class="map-btn" id="btnMapSections">
-      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      Mapear seções
-    </button>
-    <button class="map-btn" id="btnClearSections" style="display:none">
-      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+  <button class="map-trigger" id="btnMapSections" onmousedown="event.stopPropagation()">
+    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    Seções
+  </button>
+  <div class="map-panel" id="mapPanel" onmousedown="event.stopPropagation()">
+    <div id="secPillsContainer" style="display:flex;align-items:center;gap:2px"></div>
+    <div class="map-panel-sep"></div>
+    <button class="map-action clear" id="btnClearSections">
+      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
       Limpar
     </button>
-    <button class="map-btn" id="btnDoneMap" style="display:none">Concluir</button>
+    <button class="map-action done" id="btnDoneMap">
+      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Concluir
+    </button>
   </div>
 </div>
-
-<!-- Section mapping bar – fora da timeline para evitar bugs de propagação de clique -->
-<div class="map-section-bar" id="secPalette"></div>
+<div id="secPalette" style="display:none">
 
 <!-- Main body -->
 <div class="main-body">
@@ -1144,73 +1152,90 @@ function drawMasterWaveform() {
 // ═══════════════════════════════════════════════════════════════
 // SECTION MAPPING
 // ═══════════════════════════════════════════════════════════════
+function _rrect(cx, x, y, w, h, r) {
+  cx.beginPath(); cx.moveTo(x+r,y); cx.lineTo(x+w-r,y);
+  cx.quadraticCurveTo(x+w,y,x+w,y+r); cx.lineTo(x+w,y+h-r);
+  cx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); cx.lineTo(x+r,y+h);
+  cx.quadraticCurveTo(x,y+h,x,y+h-r); cx.lineTo(x,y+r);
+  cx.quadraticCurveTo(x,y,x+r,y); cx.closePath();
+}
+
 function drawSectionsOverlay() {
   const cv = document.getElementById('tlSections');
   const tl = document.getElementById('masterTl');
   const W = tl.clientWidth, H = tl.clientHeight;
-  // Only reset canvas size if dimensions changed — avoids flicker on every drag frame
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
   const cx = cv.getContext('2d');
   cx.clearRect(0, 0, W, H);
+  if (!sections.length) return;
 
   const sorted = [...sections].sort((a, b) => a.pos - b.pos);
+  const BAR = 3;
+
   for (let i = 0; i < sorted.length; i++) {
     const sec = sorted[i];
-    const x = sec.pos * W;
-    const nextX = i < sorted.length - 1 ? sorted[i+1].pos * W : W;
-    // Region fill
-    cx.fillStyle = sec.color + '20';
-    cx.fillRect(x, 0, nextX - x, H - 14);
-    // Vertical line
-    cx.strokeStyle = sec.color + 'CC';
-    cx.lineWidth = 2;
-    cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H - 14); cx.stroke();
-    // Handle knob
+    const x = Math.round(sec.pos * W);
+    const nextX = i < sorted.length - 1 ? Math.round(sorted[i+1].pos * W) : W;
+    const regionW = nextX - x;
+
+    const grd = cx.createLinearGradient(x, 0, x, H - BAR);
+    grd.addColorStop(0, sec.color + '1A');
+    grd.addColorStop(1, sec.color + '06');
+    cx.fillStyle = grd;
+    cx.fillRect(x, 0, regionW, H - BAR);
+
     cx.fillStyle = sec.color;
-    cx.beginPath(); cx.arc(x, H - 14, 6, 0, Math.PI * 2); cx.fill();
-    // Label — clamp so it never renders off-screen
-    cx.fillStyle = '#fff';
-    cx.font = 'bold 9px Syne,sans-serif';
-    cx.textAlign = 'left';
-    const labelX = Math.min(x + 4, W - 40);
-    cx.fillText(sec.label, labelX, H - 18);
+    cx.fillRect(x, H - BAR, regionW, BAR);
+
+    cx.strokeStyle = sec.color + 'AA';
+    cx.lineWidth = 1.5;
+    cx.beginPath(); cx.moveTo(x + 0.5, 0); cx.lineTo(x + 0.5, H - BAR); cx.stroke();
+
+    if (regionW > 24) {
+      cx.font = '700 8.5px system-ui,sans-serif';
+      cx.textAlign = 'left';
+      const tw = cx.measureText(sec.label).width;
+      const pillW = Math.min(tw + 12, regionW - 6);
+      const lx = Math.min(x + 5, W - pillW - 4);
+      cx.fillStyle = sec.color + '2A';
+      _rrect(cx, lx, 5, pillW, 14, 3); cx.fill();
+      cx.fillStyle = sec.color + 'EE';
+      cx.save(); cx.rect(lx, 5, pillW, 14); cx.clip();
+      cx.fillText(sec.label, lx + 6, 15); cx.restore();
+    }
+
+    if (mappingMode) {
+      cx.fillStyle = sec.color;
+      cx.beginPath(); cx.moveTo(x-6,H); cx.lineTo(x+6,H); cx.lineTo(x,H-9); cx.closePath(); cx.fill();
+    }
   }
 
-  // Mapping mode: dashed guide line
   if (mappingMode) {
-    cx.strokeStyle = 'rgba(180,195,220,.3)';
-    cx.lineWidth = 1;
-    cx.setLineDash([4, 6]);
+    cx.strokeStyle = 'rgba(232,114,26,.12)';
+    cx.lineWidth = 1; cx.setLineDash([3,9]);
     cx.beginPath(); cx.moveTo(0, H/2); cx.lineTo(W, H/2); cx.stroke();
     cx.setLineDash([]);
   }
 }
-
 function setupMappingPalette() {
-  const pal=document.getElementById('secPalette'); pal.innerHTML='';
-  const lbl=document.createElement('span');
-  lbl.style.cssText='font-size:9px;color:var(--txt3);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;margin-right:4px';
-  lbl.textContent='Tipo:';
-  pal.appendChild(lbl);
-  SECTION_TYPES.forEach(sec=>{
-    const btn=document.createElement('div');
-    btn.className='sec-pill'+(selectedSecType===sec.id?' selected':'');
-    btn.style.background=sec.color+'30'; btn.style.color=sec.color; btn.style.borderColor=sec.color+'60';
-    btn.textContent=sec.label;
-    btn.setAttribute('role','button');
-    btn.setAttribute('tabindex','0');
-    btn.title = sec.label;
-    btn.onmousedown=e=>e.stopPropagation();
-    const toggle = () => { selectedSecType=selectedSecType===sec.id?null:sec.id; setupMappingPalette(); };
-    btn.onclick=toggle;
-    btn.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(); } };
-    pal.appendChild(btn);
+  const container = document.getElementById('secPillsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  SECTION_TYPES.forEach(sec => {
+    const btn = document.createElement('button');
+    const isActive = selectedSecType === sec.id;
+    btn.className = 'sec-chip' + (isActive ? ' active' : '');
+    if (isActive) btn.style.cssText = `background:${sec.color}20;border-color:${sec.color}60;color:${sec.color}`;
+    btn.innerHTML = `<span class="chip-dot" style="background:${isActive ? sec.color : sec.color+'55'}"></span>${sec.label}`;
+    btn.title = `Marcar: ${sec.label}`;
+    btn.onmousedown = e => e.stopPropagation();
+    const toggle = () => { selectedSecType = selectedSecType===sec.id ? null : sec.id; setupMappingPalette(); };
+    btn.onclick = toggle;
+    btn.onkeydown = e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(); } };
+    container.appendChild(btn);
   });
-  const hint=document.createElement('span');
-  hint.style.cssText='font-size:9px;color:var(--txt3);margin-left:auto;white-space:nowrap;font-style:italic';
-  hint.textContent='Clique na timeline para marcar · Arraste para mover';
-  pal.appendChild(hint);
 }
+
 
 // ═══════════════════════════════════════════════════════════════
 // TRACK WAVEFORMS
@@ -1735,6 +1760,8 @@ async function loadProject(id, autoPlay = false) {
   _savedAudioKeys.clear();
   _compositeMixRunning = false;
   allMuted = false;
+  stereoSplit = false;
+  document.getElementById('btnStereoSplit').classList.remove('active');
   document.getElementById('toggleMuteLbl').textContent = 'Silenciar tudo';
   document.getElementById('toggleMuteIcon').innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/>';
   document.getElementById('btnToggleMute').classList.remove('active');
@@ -1942,6 +1969,8 @@ async function _loadFromCache(id, autoPlay) {
   document.getElementById('trackList').innerHTML = '';
   trackNodes = {};
   _savedAudioKeys.clear(); _compositeMixRunning = false; allMuted = false;
+  stereoSplit = false;
+  document.getElementById('btnStereoSplit').classList.remove('active');
   document.getElementById('toggleMuteLbl').textContent = 'Silenciar tudo';
   document.getElementById('toggleMuteIcon').innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/>';
   document.getElementById('btnToggleMute').classList.remove('active');
@@ -2557,21 +2586,14 @@ document.getElementById('btnMapSections').onclick=function(){
   mappingMode=!mappingMode;
   document.getElementById('masterTl').classList.toggle('mapping',mappingMode);
   this.classList.toggle('active',mappingMode);
-  document.getElementById('secPalette').classList.toggle('visible',mappingMode);
-  document.getElementById('btnClearSections').style.display=mappingMode?'flex':'none';
-  document.getElementById('btnDoneMap').style.display=mappingMode?'flex':'none';
-  if(mappingMode){selectedSecType=SECTION_TYPES[0].id;setupMappingPalette();}
+  if(mappingMode){ selectedSecType=SECTION_TYPES[0].id; setupMappingPalette(); }
   drawSectionsOverlay();
 };
 document.getElementById('btnDoneMap').onclick=()=>{
   mappingMode=false;
   document.getElementById('masterTl').classList.remove('mapping');
   document.getElementById('btnMapSections').classList.remove('active');
-  document.getElementById('secPalette').classList.remove('visible');
-  document.getElementById('btnClearSections').style.display='none';
-  document.getElementById('btnDoneMap').style.display='none';
   drawSectionsOverlay();
-  // Persist sections after mapping session ends
   _flushProjectMeta().catch(() => {});
 };
 
@@ -2756,7 +2778,7 @@ function _resumeAudio() {
 
 // A "real" empty state: tracks array is empty AND no background load is running
 function _genuinelyEmpty() {
-  return tracks.length === 0 && !isLoadingProject && !isTransitioning && !_isRestoring;
+  return tracks.length === 0 && !isLoadingProject && !isTransitioning && !_isRestoring && !_bgLoadRunning;
 }
 
 async function _safeRestore() {
