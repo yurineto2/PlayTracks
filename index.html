@@ -364,6 +364,53 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
   .map-section-bar.visible { max-height: 90px; flex-wrap: wrap; row-gap: 4px; padding: 7px 12px; }
   .map-section-bar .sec-pill { font-size: 8px; height: 18px; padding: 0 7px; }
 }
+
+/* ── SECTION EDITOR MODAL ── */
+.sec-editor-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .22s;backdrop-filter:blur(4px)}
+.sec-editor-overlay.open{opacity:1;pointer-events:all}
+.sec-editor{width:100%;max-height:88vh;background:var(--bg1);border-radius:18px 18px 0 0;border-top:1px solid var(--border2);display:flex;flex-direction:column;transform:translateY(40px);transition:transform .22s cubic-bezier(.4,0,.2,1)}
+.sec-editor-overlay.open .sec-editor{transform:translateY(0)}
+.sec-ed-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;flex-shrink:0;border-bottom:1px solid var(--border)}
+.sec-ed-head h3{font-size:14px;font-weight:700;color:var(--txt1)}
+.sec-ed-head-right{display:flex;align-items:center;gap:8px}
+.sec-ed-close{width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--bg3);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--txt3);transition:all .12s}
+.sec-ed-close:hover{background:var(--bg4);color:var(--txt1)}
+/* Zoom controls */
+.zoom-ctrl{display:flex;align-items:center;gap:4px}
+.zoom-btn{width:26px;height:26px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);cursor:pointer;color:var(--txt2);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .12s;font-family:'JetBrains Mono',monospace}
+.zoom-btn:hover{background:var(--bg4);color:var(--txt1)}
+.zoom-val{font-size:10px;color:var(--txt3);font-family:'JetBrains Mono',monospace;min-width:36px;text-align:center}
+/* Waveform canvas area */
+.sec-ed-canvas-wrap{position:relative;flex-shrink:0;height:120px;margin:0 18px;border-radius:8px;overflow:hidden;background:var(--bg0);border:1px solid var(--border);cursor:crosshair;touch-action:none}
+.sec-ed-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.sec-ed-playhead{position:absolute;top:0;bottom:0;width:1.5px;background:rgba(255,255,255,.5);pointer-events:none;z-index:5}
+.sec-ed-time-bar{position:absolute;bottom:0;left:0;right:0;height:18px;background:rgba(0,0,0,.4);display:flex;align-items:center;pointer-events:none}
+/* Viewport scroll indicator */
+.sec-ed-scroll{flex-shrink:0;height:28px;margin:4px 18px 0;position:relative;background:var(--bg0);border-radius:4px;border:1px solid var(--border);cursor:pointer;overflow:hidden}
+.sec-ed-scroll-thumb{position:absolute;top:2px;bottom:2px;background:rgba(255,255,255,.12);border-radius:3px;cursor:grab;min-width:20px}
+.sec-ed-scroll-thumb:active{cursor:grabbing}
+.sec-ed-scroll-wave{position:absolute;inset:0}
+/* Section list */
+.sec-ed-body{flex:1;overflow-y:auto;padding:10px 18px 12px}
+.sec-ed-list{display:flex;flex-direction:column;gap:4px}
+.sec-ed-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg2);border-radius:7px;border:1px solid var(--border);transition:border-color .12s}
+.sec-ed-item:hover{border-color:var(--border2)}
+.sec-ed-item.selected{border-color:rgba(255,255,255,.25);background:var(--bg3)}
+.sec-ed-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.sec-ed-name{font-size:11px;font-weight:600;min-width:70px;flex-shrink:0}
+.sec-ed-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txt2);min-width:60px;flex-shrink:0;cursor:pointer;padding:2px 6px;border-radius:4px;border:1px solid transparent;transition:all .12s}
+.sec-ed-time:hover{background:var(--bg3);border-color:var(--border2)}
+.sec-ed-time input{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txt1);background:var(--bg4);border:1px solid var(--accent);border-radius:4px;padding:1px 4px;width:64px;outline:none}
+.sec-ed-actions{margin-left:auto;display:flex;gap:4px}
+.sec-ed-del{width:22px;height:22px;border-radius:4px;border:none;background:transparent;cursor:pointer;color:var(--txt3);display:flex;align-items:center;justify-content:center;transition:all .12s}
+.sec-ed-del:hover{background:rgba(255,61,90,.15);color:var(--danger)}
+.sec-ed-footer{flex-shrink:0;padding:10px 18px 14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sec-ed-type-row{display:flex;gap:4px;flex-wrap:wrap}
+.sec-ed-type-btn{height:24px;padding:0 9px;border-radius:5px;border:1px solid transparent;cursor:pointer;font-size:9px;font-family:'Syne',sans-serif;font-weight:700;display:flex;align-items:center;gap:3px;transition:all .12s;color:var(--txt3);background:transparent}
+.sec-ed-type-btn:hover{background:rgba(255,255,255,.07)}
+.sec-ed-type-btn.active{color:#fff}
+.sec-ed-hint{font-size:9px;color:var(--txt3);font-style:italic;flex-shrink:0}
+
 </style>
 </head>
 <body>
@@ -458,7 +505,7 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
     </button>
   </div>
 </div>
-<div id="secPalette" style="display:none">
+<div id="secPalette" style="display:none"></div>
 
 <!-- Main body -->
 <div class="main-body">
@@ -553,6 +600,45 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
     <div class="modal-actions">
       <button class="modal-btn cancel" id="metaCancel">Cancelar</button>
       <button class="modal-btn save" id="metaSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Section Editor Modal -->
+<div class="sec-editor-overlay" id="secEditorOverlay">
+  <div class="sec-editor" id="secEditor">
+    <div class="sec-ed-head">
+      <h3>Editor de Seções</h3>
+      <div class="sec-ed-head-right">
+        <div class="zoom-ctrl">
+          <button class="zoom-btn" id="secEdZoomOut" title="Diminuir zoom">−</button>
+          <span class="zoom-val" id="secEdZoomVal">1×</span>
+          <button class="zoom-btn" id="secEdZoomIn" title="Aumentar zoom">+</button>
+        </div>
+        <button class="sec-ed-close" id="secEdClose" title="Fechar">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <!-- Waveform + sections canvas -->
+    <div class="sec-ed-canvas-wrap" id="secEdCanvasWrap">
+      <canvas class="sec-ed-canvas" id="secEdWave"></canvas>
+      <canvas class="sec-ed-canvas" id="secEdOverlay" style="z-index:3"></canvas>
+      <div class="sec-ed-playhead" id="secEdPlayhead" style="left:0;display:none"></div>
+    </div>
+    <!-- Minimap scroll -->
+    <div class="sec-ed-scroll" id="secEdScroll">
+      <canvas class="sec-ed-scroll-wave" id="secEdScrollWave"></canvas>
+      <div class="sec-ed-scroll-thumb" id="secEdScrollThumb"></div>
+    </div>
+    <!-- Section list -->
+    <div class="sec-ed-body">
+      <div class="sec-ed-list" id="secEdList"></div>
+    </div>
+    <!-- Footer: type selector + hint -->
+    <div class="sec-ed-footer">
+      <div class="sec-ed-type-row" id="secEdTypeRow"></div>
+      <span class="sec-ed-hint">Toque na waveform para marcar · Arraste para mover</span>
     </div>
   </div>
 </div>
@@ -2584,13 +2670,8 @@ function _newSecId() { return 'sec_' + (++_secIdCounter); }
 })();
 
 // Mapping mode toggle
-document.getElementById('btnMapSections').onclick=function(){
-  mappingMode=!mappingMode;
-  document.getElementById('masterTl').classList.toggle('mapping',mappingMode);
-  this.classList.toggle('active',mappingMode);
-  if(mappingMode){ selectedSecType=SECTION_TYPES[0].id; setupMappingPalette(); }
-  drawSectionsOverlay();
-};
+// Map trigger: open full section editor modal
+document.getElementById('btnMapSections').onclick=()=>openSectionEditor();
 document.getElementById('btnDoneMap').onclick=()=>{
   mappingMode=false;
   document.getElementById('masterTl').classList.remove('mapping');
@@ -2825,6 +2906,442 @@ document.addEventListener('visibilitychange', () => {
     }, 300);
   }
 });
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION EDITOR — full-featured modal with zoom + precision
+// ═══════════════════════════════════════════════════════════════
+let _seZoom = 1;          // 1 = full song, 4 = 4× zoom
+let _seOffset = 0;        // viewport start (0–1 ratio)
+let _seSelectedId = null; // id of selected section
+let _seDragSec = null;    // section being dragged in editor
+let _seDragStartX = 0;
+let _seDragStartPos = 0;
+let _seSelectedType = null;
+let _seEditing = false;   // currently open
+
+function openSectionEditor() {
+  _seEditing = true;
+  _seZoom = 1; _seOffset = 0; _seSelectedId = null; _seDragSec = null;
+  document.getElementById('secEditorOverlay').classList.add('open');
+  _seSelectedType = SECTION_TYPES[0].id;
+  _seRenderTypeRow();
+  requestAnimationFrame(() => { _seDrawWave(); _seDrawOverlay(); _seDrawMinimap(); _seRenderList(); });
+}
+
+function closeSectionEditor() {
+  _seEditing = false;
+  document.getElementById('secEditorOverlay').classList.remove('open');
+  drawSectionsOverlay();
+  _flushProjectMeta().catch(() => {});
+}
+
+function _seTimeToX(pos, W) {
+  // pos is 0–1 of total duration
+  return ((pos - _seOffset) * _seZoom) * W;
+}
+function _seXToPos(x, W) {
+  return x / (W * _seZoom) + _seOffset;
+}
+function _seClampOffset() {
+  const maxOffset = Math.max(0, 1 - 1/_seZoom);
+  _seOffset = Math.max(0, Math.min(maxOffset, _seOffset));
+}
+
+function _seDrawWave() {
+  const cv = document.getElementById('secEdWave');
+  const wrap = document.getElementById('secEdCanvasWrap');
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  cv.width = W; cv.height = H;
+  const cx = cv.getContext('2d');
+  cx.clearRect(0, 0, W, H);
+
+  // Background
+  cx.fillStyle = 'var(--bg0)';
+  // Draw waveform from masterPeaks
+  const peaks = masterPeaks;
+  if (peaks && peaks.length && DURATION > 0) {
+    const mid = H * 0.55;
+    const viewStart = _seOffset;
+    const viewEnd = _seOffset + 1 / _seZoom;
+    const iStart = Math.floor(viewStart * peaks.length);
+    const iEnd = Math.ceil(viewEnd * peaks.length);
+    const visiblePeaks = peaks.slice(iStart, iEnd);
+    const step = W / visiblePeaks.length;
+
+    // Gradient fill
+    const grd = cx.createLinearGradient(0, 0, 0, H);
+    grd.addColorStop(0, 'rgba(232,114,26,.5)');
+    grd.addColorStop(0.5, 'rgba(232,114,26,.15)');
+    grd.addColorStop(1, 'rgba(232,114,26,.05)');
+
+    cx.beginPath(); cx.moveTo(0, mid);
+    for (let i = 0; i < visiblePeaks.length; i++) {
+      cx.lineTo(i * step, mid - visiblePeaks[i] * (mid * 0.88));
+    }
+    cx.lineTo(W, mid);
+    cx.lineTo(0, mid);
+    cx.closePath();
+    cx.fillStyle = grd; cx.fill();
+
+    cx.beginPath(); cx.moveTo(0, mid);
+    for (let i = 0; i < visiblePeaks.length; i++) {
+      cx.lineTo(i * step, mid + visiblePeaks[i] * (mid * 0.88) * 0.6);
+    }
+    cx.lineTo(W, mid);
+    cx.lineTo(0, mid);
+    cx.closePath();
+    cx.fillStyle = 'rgba(232,114,26,.08)'; cx.fill();
+
+    // Outline
+    cx.beginPath(); cx.moveTo(0, mid);
+    for (let i = 0; i < visiblePeaks.length; i++) {
+      cx.lineTo(i * step, mid - visiblePeaks[i] * (mid * 0.88));
+    }
+    cx.strokeStyle = 'rgba(232,114,26,.7)'; cx.lineWidth = 1; cx.stroke();
+
+    // Center line
+    cx.beginPath(); cx.strokeStyle = 'rgba(255,255,255,.06)'; cx.lineWidth = .5;
+    cx.moveTo(0, mid); cx.lineTo(W, mid); cx.stroke();
+  } else {
+    cx.fillStyle = 'rgba(255,255,255,.04)';
+    cx.fillRect(0, 0, W, H);
+    cx.fillStyle = 'var(--txt3)'; cx.font = '11px system-ui'; cx.textAlign = 'center';
+    cx.fillText('Nenhum áudio carregado', W/2, H/2);
+  }
+
+  // Time ruler at bottom
+  const viewDur = DURATION / _seZoom;
+  const viewStart2 = _seOffset * DURATION;
+  const H2 = H;
+  cx.fillStyle = 'rgba(0,0,0,.4)';
+  cx.fillRect(0, H2 - 20, W, 20);
+  // Pick tick interval
+  const tickIntervals = [0.5,1,2,5,10,15,30,60,120,300];
+  const minPixPerTick = 40;
+  const tickSec = tickIntervals.find(t => (t / viewDur) * W > minPixPerTick) || 300;
+  const firstTick = Math.ceil(viewStart2 / tickSec) * tickSec;
+  cx.font = '9px JetBrains Mono,monospace'; cx.textAlign = 'center'; cx.fillStyle = 'rgba(255,255,255,.4)';
+  for (let t = firstTick; t < viewStart2 + viewDur; t += tickSec) {
+    const x = ((t / DURATION - _seOffset) * _seZoom) * W;
+    cx.strokeStyle = 'rgba(255,255,255,.2)'; cx.lineWidth = .5;
+    cx.beginPath(); cx.moveTo(x, H2-20); cx.lineTo(x, H2); cx.stroke();
+    const m = Math.floor(t/60), s = (t%60).toFixed(1).padStart(4,'0');
+    cx.fillText(m>0?`${m}:${s}`:`${s}s`, x, H2-6);
+  }
+}
+
+function _seDrawOverlay() {
+  const cv = document.getElementById('secEdOverlay');
+  const wrap = document.getElementById('secEdCanvasWrap');
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const cx = cv.getContext('2d');
+  cx.clearRect(0, 0, W, H);
+
+  const sorted = [...sections].sort((a,b) => a.pos - b.pos);
+  const BAR = 3;
+
+  for (let i = 0; i < sorted.length; i++) {
+    const sec = sorted[i];
+    const x = _seTimeToX(sec.pos, W);
+    if (x < -20 || x > W + 20) continue; // out of view
+    const nextSec = sorted[i+1];
+    const nextX = nextSec ? _seTimeToX(nextSec.pos, W) : W;
+    const regionW = Math.max(0, nextX - x);
+    const isSelected = sec.id === _seSelectedId;
+
+    // Region fill
+    const grd = cx.createLinearGradient(x, 0, x, H - BAR);
+    grd.addColorStop(0, sec.color + (isSelected ? '35' : '20'));
+    grd.addColorStop(1, sec.color + '08');
+    cx.fillStyle = grd;
+    cx.fillRect(Math.max(x, 0), 0, regionW, H - BAR);
+
+    // Bottom bar
+    cx.fillStyle = sec.color + (isSelected ? 'FF' : 'CC');
+    cx.fillRect(Math.max(x, 0), H - BAR, regionW, BAR);
+
+    // Left border — thicker if selected
+    cx.strokeStyle = sec.color + (isSelected ? 'FF' : 'AA');
+    cx.lineWidth = isSelected ? 2 : 1.5;
+    cx.beginPath(); cx.moveTo(x+1, 0); cx.lineTo(x+1, H-BAR); cx.stroke();
+
+    // Label pill
+    if (regionW > 30 && x > -10) {
+      cx.font = `700 10px system-ui,sans-serif`;
+      cx.textAlign = 'left';
+      const tw = cx.measureText(sec.label).width;
+      const pillW = Math.min(tw + 14, regionW - 6);
+      const lx = Math.max(x + 5, 2);
+      cx.fillStyle = sec.color + '30';
+      _rrect(cx, lx, 8, pillW, 18, 4); cx.fill();
+      cx.fillStyle = sec.color + 'EE';
+      cx.save(); cx.rect(lx, 8, pillW, 18); cx.clip();
+      cx.fillText(sec.label, lx + 7, 21); cx.restore();
+    }
+
+    // Drag handle (triangle)
+    cx.fillStyle = sec.color + (isSelected ? 'FF' : 'BB');
+    cx.beginPath(); cx.moveTo(x-7, H); cx.lineTo(x+7, H); cx.lineTo(x, H-10); cx.closePath(); cx.fill();
+
+    // Selection ring
+    if (isSelected) {
+      cx.strokeStyle = sec.color; cx.lineWidth = 1.5; cx.setLineDash([3, 3]);
+      cx.strokeRect(Math.max(x, 0), 0, Math.min(regionW, W - Math.max(x, 0)), H-BAR);
+      cx.setLineDash([]);
+    }
+  }
+
+  // Current playhead
+  if (DURATION > 0) {
+    const ph = _seTimeToX(pauseOffset / DURATION, W);
+    if (ph >= 0 && ph <= W) {
+      cx.strokeStyle = 'rgba(255,255,255,.6)'; cx.lineWidth = 1.5;
+      cx.beginPath(); cx.moveTo(ph, 0); cx.lineTo(ph, H - BAR); cx.stroke();
+    }
+  }
+}
+
+function _seDrawMinimap() {
+  const cv = document.getElementById('secEdScrollWave');
+  const wrap = document.getElementById('secEdScroll');
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  cv.width = W; cv.height = H;
+  const cx = cv.getContext('2d');
+  cx.clearRect(0, 0, W, H);
+  const peaks = masterPeaks;
+  if (peaks && peaks.length) {
+    const mid = H / 2;
+    cx.beginPath(); cx.moveTo(0, mid);
+    for (let i = 0; i < W; i++) {
+      const pi = Math.floor(i / W * peaks.length);
+      cx.lineTo(i, mid - peaks[pi] * (mid - 2));
+    }
+    cx.strokeStyle = 'rgba(232,114,26,.4)'; cx.lineWidth = 1; cx.stroke();
+  }
+  // Draw section markers on minimap
+  sections.forEach(sec => {
+    cx.fillStyle = sec.color;
+    cx.fillRect(sec.pos * W - .5, 0, 2, H);
+  });
+  // Update thumb position and size
+  const thumb = document.getElementById('secEdScrollThumb');
+  const thumbW = Math.max(20, W / _seZoom);
+  const thumbX = _seOffset * W * _seZoom;
+  thumb.style.left = thumbX + 'px';
+  thumb.style.width = thumbW + 'px';
+}
+
+function _seRenderList() {
+  const list = document.getElementById('secEdList');
+  list.innerHTML = '';
+  if (!sections.length) {
+    list.innerHTML = '<p style="text-align:center;color:var(--txt3);font-size:11px;padding:16px 0">Nenhuma seção marcada ainda.<br>Toque na waveform para adicionar.</p>';
+    return;
+  }
+  const sorted = [...sections].sort((a,b) => a.pos - b.pos);
+  sorted.forEach(sec => {
+    const timeSec = sec.pos * DURATION;
+    const m = Math.floor(timeSec / 60), s = timeSec % 60;
+    const timeStr = `${String(m).padStart(2,'0')}:${s.toFixed(2).padStart(5,'0')}`;
+    const item = document.createElement('div');
+    item.className = 'sec-ed-item' + (sec.id === _seSelectedId ? ' selected' : '');
+    item.dataset.id = sec.id;
+    item.innerHTML = `
+      <div class="sec-ed-dot" style="background:${sec.color}"></div>
+      <span class="sec-ed-name" style="color:${sec.color}">${sec.label}</span>
+      <span class="sec-ed-time" id="seTime-${sec.id}" title="Clique para editar o tempo">${timeStr}</span>
+      <div class="sec-ed-actions">
+        <button class="sec-ed-del" title="Remover seção" onclick="event.stopPropagation();_seDeleteSection('${sec.id}')">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>`;
+    // Click to select + jump
+    item.onclick = () => {
+      _seSelectedId = sec.id;
+      // Center the viewport on this section
+      const targetOffset = Math.max(0, sec.pos - 0.5 / _seZoom);
+      _seOffset = targetOffset; _seClampOffset();
+      _seDrawWave(); _seDrawOverlay(); _seDrawMinimap(); _seRenderList();
+    };
+    // Click time label to edit
+    item.querySelector('.sec-ed-time').onclick = (e) => {
+      e.stopPropagation();
+      _seEditTime(sec);
+    };
+    list.appendChild(item);
+  });
+}
+
+function _seEditTime(sec) {
+  const span = document.getElementById('seTime-' + sec.id);
+  if (!span) return;
+  const timeSec = sec.pos * DURATION;
+  const m = Math.floor(timeSec / 60), s = timeSec % 60;
+  const inp = document.createElement('input');
+  inp.value = `${String(m).padStart(2,'0')}:${s.toFixed(2).padStart(5,'0')}`;
+  inp.style.cssText = 'font-family:JetBrains Mono,monospace;font-size:10px;color:var(--txt1);background:var(--bg4);border:1px solid var(--accent);border-radius:4px;padding:1px 4px;width:72px;outline:none';
+  span.replaceWith(inp);
+  inp.select();
+  const commit = () => {
+    const parts = inp.value.split(':');
+    let newSec = 0;
+    if (parts.length === 2) newSec = parseInt(parts[0]) * 60 + parseFloat(parts[1]);
+    else newSec = parseFloat(parts[0]);
+    if (!isNaN(newSec) && newSec >= 0 && newSec <= DURATION) {
+      sec.pos = newSec / DURATION;
+      sections.sort((a,b) => a.pos - b.pos);
+    }
+    _seDrawOverlay(); _seDrawMinimap(); _seRenderList();
+  };
+  inp.onblur = commit;
+  inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') { _seRenderList(); } };
+}
+
+function _seDeleteSection(id) {
+  sections = sections.filter(s => s.id !== id);
+  if (_seSelectedId === id) _seSelectedId = null;
+  _seDrawOverlay(); _seDrawMinimap(); _seRenderList();
+}
+
+function _seRenderTypeRow() {
+  const row = document.getElementById('secEdTypeRow');
+  row.innerHTML = '';
+  SECTION_TYPES.forEach(sec => {
+    const btn = document.createElement('button');
+    const isActive = _seSelectedType === sec.id;
+    btn.className = 'sec-ed-type-btn' + (isActive ? ' active' : '');
+    if (isActive) btn.style.cssText = `background:${sec.color}22;border-color:${sec.color}66;color:${sec.color}`;
+    btn.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${isActive ? sec.color : sec.color+'55'};display:inline-block;flex-shrink:0"></span>${sec.label}`;
+    btn.onmousedown = e => e.stopPropagation();
+    btn.onclick = () => { _seSelectedType = sec.id; _seRenderTypeRow(); };
+    row.appendChild(btn);
+  });
+}
+
+// ── Canvas interactions ──
+(function() {
+  const wrap = document.getElementById('secEdCanvasWrap');
+  let touching = false, touchId = null;
+
+  function getX(e) {
+    if (e.touches) {
+      const t = Array.from(e.touches).find(t => t.identifier === touchId) || e.touches[0];
+      return t.clientX - wrap.getBoundingClientRect().left;
+    }
+    return e.clientX - wrap.getBoundingClientRect().left;
+  }
+
+  function hitTest(x) {
+    const W = wrap.clientWidth;
+    const pos = _seXToPos(x, W);
+    return sections.find(s => {
+      const sx = _seTimeToX(s.pos, W);
+      return Math.abs(x - sx) < 14; // 14px hit area
+    });
+  }
+
+  function onDown(x) {
+    const W = wrap.clientWidth;
+    const near = hitTest(x);
+    if (near) {
+      _seDragSec = near;
+      _seDragStartX = x;
+      _seDragStartPos = near.pos;
+      _seSelectedId = near.id;
+      _seRenderList();
+      return;
+    }
+    // Add new section
+    if (!_seSelectedType) return;
+    const secDef = SECTION_TYPES.find(s => s.id === _seSelectedType);
+    const pos = Math.max(0, Math.min(1, _seXToPos(x, W)));
+    sections.push({ id: _newSecId(), type: secDef.id, label: secDef.label, color: secDef.color, pos });
+    sections.sort((a,b) => a.pos - b.pos);
+    _seDrawOverlay(); _seDrawMinimap(); _seRenderList();
+  }
+
+  function onMove(x) {
+    if (!_seDragSec) return;
+    const W = wrap.clientWidth;
+    const dx = x - _seDragStartX;
+    const dPos = dx / (W * _seZoom);
+    _seDragSec.pos = Math.max(0, Math.min(1, _seDragStartPos + dPos));
+    _seDrawOverlay(); _seDrawMinimap(); _seRenderList();
+  }
+
+  function onUp() {
+    if (_seDragSec) { sections.sort((a,b) => a.pos - b.pos); _seDragSec = null; }
+  }
+
+  wrap.addEventListener('mousedown', e => { if(e.button!==0) return; onDown(getX(e)); });
+  document.addEventListener('mousemove', e => { if(_seDragSec) onMove(getX(e)); });
+  document.addEventListener('mouseup', onUp);
+  wrap.addEventListener('touchstart', e => { e.preventDefault(); touchId=e.changedTouches[0].identifier; touching=true; onDown(getX(e)); }, {passive:false});
+  document.addEventListener('touchmove', e => { if(!touching) return; e.preventDefault(); onMove(getX(e)); }, {passive:false});
+  document.addEventListener('touchend', e => { if(!touching) return; touching=false; onUp(); });
+})();
+
+// ── Minimap thumb drag ──
+(function() {
+  const scroll = document.getElementById('secEdScroll');
+  const thumb = document.getElementById('secEdScrollThumb');
+  let dragging = false, startX = 0, startOffset = 0;
+
+  function setOffsetFromX(x) {
+    const W = scroll.clientWidth;
+    _seOffset = x / W;
+    _seClampOffset();
+    _seDrawWave(); _seDrawOverlay(); _seDrawMinimap();
+  }
+
+  thumb.addEventListener('mousedown', e => { dragging=true; startX=e.clientX; startOffset=_seOffset; e.stopPropagation(); });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const W = scroll.clientWidth;
+    _seOffset = startOffset + (e.clientX - startX) / (W * _seZoom);
+    _seClampOffset(); _seDrawWave(); _seDrawOverlay(); _seDrawMinimap();
+  });
+  document.addEventListener('mouseup', () => dragging = false);
+  // Click on track = jump
+  scroll.addEventListener('click', e => {
+    if (e.target === thumb) return;
+    setOffsetFromX((e.clientX - scroll.getBoundingClientRect().left) / scroll.clientWidth - 0.5 / _seZoom);
+  });
+  // Touch
+  thumb.addEventListener('touchstart', e => { e.stopPropagation(); dragging=true; startX=e.touches[0].clientX; startOffset=_seOffset; }, {passive:true});
+  document.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const W = scroll.clientWidth;
+    _seOffset = startOffset + (e.touches[0].clientX - startX) / (W * _seZoom);
+    _seClampOffset(); _seDrawWave(); _seDrawOverlay(); _seDrawMinimap();
+  });
+  document.addEventListener('touchend', () => dragging=false);
+})();
+
+// ── Zoom buttons ──
+document.getElementById('secEdZoomIn').onclick = () => {
+  _seZoom = Math.min(_seZoom * 2, 32);
+  _seClampOffset();
+  document.getElementById('secEdZoomVal').textContent = _seZoom + '×';
+  _seDrawWave(); _seDrawOverlay(); _seDrawMinimap();
+};
+document.getElementById('secEdZoomOut').onclick = () => {
+  _seZoom = Math.max(_seZoom / 2, 1);
+  _seClampOffset();
+  document.getElementById('secEdZoomVal').textContent = _seZoom + '×';
+  _seDrawWave(); _seDrawOverlay(); _seDrawMinimap();
+};
+
+// ── Open/close ──
+document.getElementById('secEdClose').onclick = closeSectionEditor;
+document.getElementById('secEditorOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('secEditorOverlay')) closeSectionEditor();
+});
+// Add "Editar seções" button click — open editor from map-trigger long-press or separate button
+// Wire map-trigger to open full editor instead of inline mode
+
 </script>
+
 </body>
 </html>
