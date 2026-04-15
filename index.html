@@ -610,6 +610,7 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
     <div class="sec-ed-head">
       <h3>Editor de Seções</h3>
       <div class="sec-ed-head-right">
+        <span id="secEdBpmDisplay" style="font-size:10px;color:var(--txt3);font-family:'JetBrains Mono',monospace;margin-right:4px"></span>
         <div class="zoom-ctrl">
           <button class="zoom-btn" id="secEdZoomOut" title="Diminuir zoom">−</button>
           <span class="zoom-val" id="secEdZoomVal">1×</span>
@@ -666,12 +667,18 @@ function _pickTrackColor() {
   return `hsl(${Math.round(hue)}, 85%, 60%)`;
 }
 const SECTION_TYPES = [
-  {id:'intro',    label:'Intro',       color:'#4FC3FF'},
-  {id:'verse',    label:'Verso',       color:'#20E87A'},
-  {id:'prechorus',label:'Pré-Refrão',  color:'#FFD020'},
-  {id:'chorus',   label:'Refrão',      color:'#FF7A2E'},
-  {id:'bridge',   label:'Ponte',       color:'#9B5EFF'},
-  {id:'outro',    label:'Final',       color:'#FF3D5A'},
+  {id:'intro',       label:'Intro',          color:'#4FC3FF'},
+  {id:'verse',       label:'Verso',          color:'#20E87A'},
+  {id:'prechorus',   label:'Pré-Refrão',     color:'#FFD020'},
+  {id:'chorus',      label:'Refrão',         color:'#FF7A2E'},
+  {id:'choir',       label:'Coro',           color:'#FF5C8A'},
+  {id:'postchorus',  label:'Pós-Refrão',     color:'#FFAB40'},
+  {id:'bridge',      label:'Ponte',          color:'#9B5EFF'},
+  {id:'interlude',   label:'Interlúdio',     color:'#00E0C6'},
+  {id:'instrumental',label:'Instrumental',   color:'#7B8FFF'},
+  {id:'solo',        label:'Solo',           color:'#FF3D5A'},
+  {id:'break',       label:'Pausa',          color:'#8B9AB8'},
+  {id:'outro',       label:'Final',          color:'#B44DFF'},
 ];
 const AUDIO_EXTS = /\.(mp3|wav|wave|flac|aiff|aif|ogg|oga|opus|m4a|aac|wma|caf|mp4|3gp|webm)$/i;
 const DB_NAME = 'playtracks_v1';
@@ -2924,6 +2931,10 @@ function openSectionEditor() {
   _seZoom = 1; _seOffset = 0; _seSelectedId = null; _seDragSec = null;
   document.getElementById('secEditorOverlay').classList.add('open');
   _seSelectedType = SECTION_TYPES[0].id;
+  // Show current BPM in header
+  const bpm = parseInt(document.getElementById('bpmInput').value) || 120;
+  const bpmEl = document.getElementById('secEdBpmDisplay');
+  if (bpmEl) bpmEl.textContent = bpm + ' BPM · grid de beats';
   _seRenderTypeRow();
   requestAnimationFrame(() => { _seDrawWave(); _seDrawOverlay(); _seDrawMinimap(); _seRenderList(); });
 }
@@ -3009,24 +3020,86 @@ function _seDrawWave() {
     cx.fillText('Nenhum áudio carregado', W/2, H/2);
   }
 
-  // Time ruler at bottom
-  const viewDur = DURATION / _seZoom;
+  // ── BPM beat grid — drawn across full waveform height ──
+  const bpm = parseInt(document.getElementById('bpmInput').value) || 120;
+  const secPerBeat = 60 / bpm;
+  const secPerBar  = secPerBeat * 4;
+  const viewDur    = DURATION / _seZoom;
   const viewStart2 = _seOffset * DURATION;
+  const viewEnd2   = viewStart2 + viewDur;
+
+  // Determine which grid lines to show based on zoom
+  const pixPerBeat = (secPerBeat / viewDur) * W;
+  const showBeats  = pixPerBeat >= 8;   // individual beats
+  const showBars   = (secPerBar / viewDur) * W >= 8; // bars (4 beats)
+
+  // Beat lines (faint, through waveform)
+  if (showBeats) {
+    const firstBeat = Math.ceil(viewStart2 / secPerBeat) * secPerBeat;
+    for (let t = firstBeat; t < viewEnd2; t += secPerBeat) {
+      const isBar = Math.abs(Math.round(t / secPerBar) * secPerBar - t) < 0.001;
+      const x = ((t / DURATION - _seOffset) * _seZoom) * W;
+      if (isBar && showBars) continue; // drawn separately below
+      cx.strokeStyle = 'rgba(255,255,255,.06)';
+      cx.lineWidth = 0.5;
+      cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H - 24); cx.stroke();
+    }
+  }
+
+  // Bar lines (stronger, labeled)
+  if (showBars) {
+    cx.font = 'bold 9px JetBrains Mono,monospace';
+    const firstBar = Math.ceil(viewStart2 / secPerBar) * secPerBar;
+    for (let t = firstBar; t < viewEnd2; t += secPerBar) {
+      const x = ((t / DURATION - _seOffset) * _seZoom) * W;
+      const barNum = Math.round(t / secPerBar) + 1;
+      // Bar line through full waveform
+      cx.strokeStyle = barNum % 4 === 1 ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.09)';
+      cx.lineWidth = barNum % 4 === 1 ? 1 : 0.5;
+      cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H - 24); cx.stroke();
+    }
+  }
+
+  // ── Time ruler at bottom (combined: time + bar numbers) ──
   const H2 = H;
-  cx.fillStyle = 'rgba(0,0,0,.4)';
-  cx.fillRect(0, H2 - 20, W, 20);
-  // Pick tick interval
-  const tickIntervals = [0.5,1,2,5,10,15,30,60,120,300];
-  const minPixPerTick = 40;
-  const tickSec = tickIntervals.find(t => (t / viewDur) * W > minPixPerTick) || 300;
-  const firstTick = Math.ceil(viewStart2 / tickSec) * tickSec;
-  cx.font = '9px JetBrains Mono,monospace'; cx.textAlign = 'center'; cx.fillStyle = 'rgba(255,255,255,.4)';
-  for (let t = firstTick; t < viewStart2 + viewDur; t += tickSec) {
+  cx.fillStyle = 'rgba(0,0,0,.55)';
+  cx.fillRect(0, H2 - 24, W, 24);
+
+  // Separator line
+  cx.strokeStyle = 'rgba(255,255,255,.08)';
+  cx.lineWidth = 1;
+  cx.beginPath(); cx.moveTo(0, H2-24); cx.lineTo(W, H2-24); cx.stroke();
+
+  // Bar numbers in ruler (top half of ruler area)
+  if (showBars) {
+    cx.font = 'bold 8px JetBrains Mono,monospace';
+    cx.textAlign = 'center';
+    const firstBar = Math.ceil(viewStart2 / secPerBar) * secPerBar;
+    for (let t = firstBar; t < viewEnd2; t += secPerBar) {
+      const x = ((t / DURATION - _seOffset) * _seZoom) * W;
+      const barNum = Math.round(t / secPerBar) + 1;
+      // Tick
+      cx.strokeStyle = 'rgba(255,255,255,.25)';
+      cx.lineWidth = 1;
+      cx.beginPath(); cx.moveTo(x, H2-24); cx.lineTo(x, H2-14); cx.stroke();
+      // Label — bar number
+      cx.fillStyle = barNum % 4 === 1 ? 'rgba(232,114,26,.9)' : 'rgba(255,255,255,.3)';
+      cx.fillText(barNum, x, H2-15);
+    }
+  }
+
+  // Timecode in ruler (bottom half) — seconds/minutes
+  const timeIntervals = [0.25, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300];
+  const minPxPerTimeTick = 60;
+  const timeTick = timeIntervals.find(t => (t / viewDur) * W > minPxPerTimeTick) || 300;
+  const firstTimeTick = Math.ceil(viewStart2 / timeTick) * timeTick;
+  cx.font = '8px JetBrains Mono,monospace';
+  cx.textAlign = 'center';
+  cx.fillStyle = 'rgba(255,255,255,.4)';
+  for (let t = firstTimeTick; t < viewEnd2; t += timeTick) {
     const x = ((t / DURATION - _seOffset) * _seZoom) * W;
-    cx.strokeStyle = 'rgba(255,255,255,.2)'; cx.lineWidth = .5;
-    cx.beginPath(); cx.moveTo(x, H2-20); cx.lineTo(x, H2); cx.stroke();
-    const m = Math.floor(t/60), s = (t%60).toFixed(1).padStart(4,'0');
-    cx.fillText(m>0?`${m}:${s}`:`${s}s`, x, H2-6);
+    const mm = Math.floor(t / 60), ss = (t % 60).toFixed(1);
+    cx.fillText(mm > 0 ? `${mm}:${ss.padStart(4,'0')}` : `${ss}s`, x, H2 - 4);
   }
 }
 
