@@ -301,6 +301,10 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
   /* Float buttons: lift above wrapped footer */
   .float-proj { bottom: 100px; }
   .float-new  { bottom: 152px; }
+  /* Section editor on tablet */
+  .sec-editor { max-height: 80vh; }
+  .sec-ed-canvas-wrap { height: 110px; margin: 0 14px; }
+  .sec-ed-footer { flex-wrap: wrap; gap: 8px; }
 }
 
 /* ════════════════════════════════════════════════════
@@ -363,12 +367,24 @@ footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-betwe
   /* Section mapping bar: pills wrap */
   .map-section-bar.visible { max-height: 90px; flex-wrap: wrap; row-gap: 4px; padding: 7px 12px; }
   .map-section-bar .sec-pill { font-size: 8px; height: 18px; padding: 0 7px; }
+
+  /* Section editor on mobile */
+  .sec-editor { max-height: 92dvh; border-radius: 14px 14px 0 0; }
+  .sec-ed-canvas-wrap { height: 100px; margin: 0 10px; }
+  .sec-ed-scroll { margin: 3px 10px 0; }
+  .sec-ed-head { padding: 10px 14px 8px; }
+  .sec-ed-head h3 { font-size: 13px; }
+  .sec-ed-footer { padding: 8px 10px 10px; flex-direction: column; gap: 5px; align-items: flex-start; }
+  .sec-ed-type-btn { height: 26px; padding: 0 7px; font-size: 8px; }
+  .sec-ed-body { padding: 6px 10px 8px; }
+  .sec-ed-item { padding: 5px 8px; }
+  #secEdBpmDisplay { display: none; }
 }
 
 /* ── SECTION EDITOR MODAL ── */
-.sec-editor-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .22s;backdrop-filter:blur(4px)}
+.sec-editor-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .22s;backdrop-filter:blur(6px)}
 .sec-editor-overlay.open{opacity:1;pointer-events:all}
-.sec-editor{width:100%;max-height:88vh;background:var(--bg1);border-radius:18px 18px 0 0;border-top:1px solid var(--border2);display:flex;flex-direction:column;transform:translateY(40px);transition:transform .22s cubic-bezier(.4,0,.2,1)}
+.sec-editor{width:100%;max-height:85dvh;background:var(--bg1);border-radius:18px 18px 0 0;border-top:1px solid var(--border2);display:flex;flex-direction:column;transform:translateY(40px);transition:transform .22s cubic-bezier(.4,0,.2,1);padding-bottom:env(safe-area-inset-bottom)}
 .sec-editor-overlay.open .sec-editor{transform:translateY(0)}
 .sec-ed-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;flex-shrink:0;border-bottom:1px solid var(--border)}
 .sec-ed-head h3{font-size:14px;font-weight:700;color:var(--txt1)}
@@ -908,23 +924,26 @@ function onSongEnd() {
   }
 }
 
-// Advance to the next project in the playlist and auto-play it
+// Advance to the next project — instant if preloaded
 async function advanceToNext() {
   const idx = projects.findIndex(p => p.id === currentProjectId);
   if (idx < 0 || idx >= projects.length - 1) {
-    // End of playlist
-    movePH(1);
-    updT(DURATION);
+    movePH(1); updT(DURATION);
     setSt('Fim da playlist','var(--ok)');
     tracks.forEach(t => drawStaticWave(t.id));
     renderProjectList();
     return;
   }
   isTransitioning = true;
-  setSt('Carregando próximo...','var(--warn)');
-  renderProjectList(); // show transitioning state
+  renderProjectList();
+  const nextId = projects[idx + 1].id;
   try {
-    await loadProject(projects[idx + 1].id, /*autoPlay=*/true);
+    // Fast path: use PE cache (instant if metadata + buffers ready)
+    const fromCache = await _loadFromCache(nextId, true);
+    if (!fromCache) {
+      setSt('Carregando próximo...','var(--warn)');
+      await loadProject(nextId, true);
+    }
   } catch(e) {
     setSt('Erro ao avançar: ' + e.message, 'var(--danger)');
   } finally {
@@ -933,22 +952,26 @@ async function advanceToNext() {
   }
 }
 
-// Jump to previous project in the playlist
+// Jump to previous project
 async function goToPrev() {
   const idx = projects.findIndex(p => p.id === currentProjectId);
   if (idx <= 0) return;
   const wasPlaying = isPlaying;
   if (isPlaying) pause();
-  await loadProject(projects[idx - 1].id, wasPlaying);
+  const id = projects[idx - 1].id;
+  const fromCache = await _loadFromCache(id, wasPlaying);
+  if (!fromCache) await loadProject(id, wasPlaying);
 }
 
-// Jump to next project in the playlist
+// Jump to next project
 async function goToNext() {
   const idx = projects.findIndex(p => p.id === currentProjectId);
   if (idx < 0 || idx >= projects.length - 1) return;
   const wasPlaying = isPlaying;
   if (isPlaying) pause();
-  await loadProject(projects[idx + 1].id, wasPlaying);
+  const id = projects[idx + 1].id;
+  const fromCache = await _loadFromCache(id, wasPlaying);
+  if (!fromCache) await loadProject(id, wasPlaying);
 }
 
 function movePH(r, anim=false) {
@@ -1899,8 +1922,16 @@ async function loadProject(id, autoPlay = false) {
 
   // ── Phase 2: Load audio in background, one track at a time ──
   _loadAudioInBackground(proj, tInfos, autoPlay);
-  // ── Phase 3: Pre-load adjacent projects so next advance is instant ──
-  setTimeout(() => _preloadAdjacentProjects(), 800);
+  // ── Phase 3: Seed PE metadata + pre-load adjacent audio buffers ──
+  setTimeout(() => {
+    if (!_PE.meta[proj.id]) {
+      _PE.meta[proj.id] = { projRec: proj, trackData: tInfos.map(t => ({
+        ...t, peaks: t.peaks ? new Float32Array(t.peaks) : null,
+        _idbKey: `${proj.id}_${t.id}`
+      }))};
+    }
+    _preloadAdjacentProjects().catch(() => {});
+  }, 600);
 }
 
 // Decode IDB audio record → AudioBuffer.
@@ -2005,59 +2036,134 @@ async function _loadAudioInBackground(proj, tInfos, autoPlay) {
 // ═══════════════════════════════════════════════════════════════
 // PLAYLIST PRE-LOADER — keeps prev/next project audio warm in RAM
 // ═══════════════════════════════════════════════════════════════
-const _preloadCache = {};
-let _preloadTaskId = 0;
+// ════════════════════════════════════════════════════════════════
+// PLAYLIST ENGINE
+// All project metadata + peaks kept in _PE.meta (tiny, ~4KB/proj)
+// Audio buffers kept warm for: next + prev on desktop, next-only on mobile
+// Advance is instant when buffer is ready; falls back to load if not
+// ════════════════════════════════════════════════════════════════
+const _PE = {
+  meta: {},        // { projId: { projRec, trackData: [{...tInfo, peaks}] } }
+  buffers: {},     // { projId: { tracks: [{buffer, _idbKey}] } }
+  taskId: 0,       // cancel stale preload tasks
+  loading: new Set(), // projIds currently being loaded
+};
 
-async function _preloadAdjacentProjects() {
-  // Mobile Safari has ~150-200MB RAM limit — preloading would cause crashes
-  if (IS_MOBILE) return;
-  const taskId = ++_preloadTaskId;
-  const curIdx = projects.findIndex(p => p.id === currentProjectId);
-  if (curIdx < 0) return;
+// How many neighbours to keep buffered
+const _PE_SLOTS = IS_MOBILE ? 1 : 2; // next only on mobile, next+prev on desktop
 
-  const toPreload = [];
-  if (curIdx + 1 < projects.length) toPreload.push(projects[curIdx + 1]);
-  if (curIdx - 1 >= 0)              toPreload.push(projects[curIdx - 1]);
-
-  for (const proj of toPreload) {
-    if (taskId !== _preloadTaskId) return;
-    if (_preloadCache[proj.id]) continue;
+// ── Seed: load ALL project metadata on startup ──
+async function _peLoadAllMeta() {
+  for (const proj of projects) {
+    if (_PE.meta[proj.id]) continue;
     try {
-      const projRec = await dbGet('projects', proj.id);
-      if (!projRec || taskId !== _preloadTaskId) continue;
-      const tInfos = projRec.tracks || [];
-      const cachedTracks = [];
-      for (const tInfo of tInfos) {
-        if (taskId !== _preloadTaskId) break;
-        await new Promise(r => setTimeout(r, 0));
-        try {
-          const audioRec = await dbGet('audio', `${proj.id}_${tInfo.id}`).catch(() => null);
-          const ct = {
-            id: tInfo.id, name: tInfo.name, hex: tInfo.hex, fileName: tInfo.fileName,
-            waveformCache: tInfo.peaks ? new Float32Array(tInfo.peaks) : null,
-            vol: tInfo.vol||80, pan: tInfo.pan||0, muted: tInfo.muted||false,
-            soloed: tInfo.soloed||false, phase: tInfo.phase||false,
-            eq: tInfo.eq||{low:{gain:0,freq:80},mid:{gain:0,freq:1000,q:1},high:{gain:0,freq:8000}},
-            sends: tInfo.sends||{reverb:0,delay:0}, buffer: null
-          };
-          if (audioRec) { const buf = await _decodeAudioRec(audioRec); if (buf) ct.buffer = buf; }
-          cachedTracks.push(ct);
-        } catch(e) { cachedTracks.push(null); }
+      const projRec = await dbGet('projects', proj.id).catch(() => null);
+      if (!projRec) continue;
+      _PE.meta[proj.id] = {
+        projRec,
+        trackData: (projRec.tracks || []).map(t => ({
+          ...t,
+          peaks: t.peaks ? new Float32Array(t.peaks) : null,
+          _idbKey: `${proj.id}_${t.id}`
+        }))
+      };
+      // Update photo in projects list if missing
+      const listProj = projects.find(p => p.id === proj.id);
+      if (listProj && !listProj.photo && projRec.photo) {
+        listProj.photo = projRec.photo;
       }
-      if (taskId === _preloadTaskId) _preloadCache[proj.id] = { projRec, tracks: cachedTracks };
-    } catch(e) { console.warn('Preload failed:', proj.id, e); }
+    } catch(e) {}
+    await new Promise(r => setTimeout(r, 0)); // yield between each project
   }
-  // Evict stale entries — keep only prev, current, next
-  const keepIds = new Set([currentProjectId, ...toPreload.map(p => p.id)]);
-  for (const key of Object.keys(_preloadCache)) {
-    if (!keepIds.has(key)) delete _preloadCache[key];
+  renderProjectList(); // refresh photos
+}
+
+// ── Load audio buffers for a single project ──
+async function _peLoadBuffers(projId) {
+  if (_PE.buffers[projId] || _PE.loading.has(projId)) return;
+  const meta = _PE.meta[projId];
+  if (!meta) return;
+  _PE.loading.add(projId);
+  const loadedTracks = [];
+  for (const td of meta.trackData) {
+    try {
+      await new Promise(r => setTimeout(r, 0));
+      const audioRec = await dbGet('audio', td._idbKey).catch(() => null);
+      if (!audioRec) { loadedTracks.push({ buffer: null, _idbKey: td._idbKey }); continue; }
+      const buf = await _decodeAudioRec(audioRec);
+      loadedTracks.push({ buffer: buf || null, _idbKey: td._idbKey });
+    } catch(e) { loadedTracks.push({ buffer: null, _idbKey: td._idbKey }); }
+  }
+  _PE.buffers[projId] = { tracks: loadedTracks };
+  _PE.loading.delete(projId);
+}
+
+// ── Evict buffers far from current position ──
+function _peEvictDistant(curIdx) {
+  const keepSet = new Set();
+  keepSet.add(projects[curIdx]?.id);
+  for (let d = 1; d <= _PE_SLOTS; d++) {
+    if (projects[curIdx + d]) keepSet.add(projects[curIdx + d].id);
+    if (!IS_MOBILE && projects[curIdx - d]) keepSet.add(projects[curIdx - d].id);
+  }
+  for (const id of Object.keys(_PE.buffers)) {
+    if (!keepSet.has(id)) {
+      delete _PE.buffers[id];
+    }
   }
 }
 
+// ── Trigger background preload of neighbours ──
+async function _preloadAdjacentProjects() {
+  const taskId = ++_PE.taskId;
+  const curIdx = projects.findIndex(p => p.id === currentProjectId);
+  if (curIdx < 0) return;
+
+  // Always ensure meta for all projects first (lightweight)
+  for (const proj of projects) {
+    if (taskId !== _PE.taskId) return;
+    if (!_PE.meta[proj.id]) {
+      try {
+        const projRec = await dbGet('projects', proj.id).catch(() => null);
+        if (!projRec) continue;
+        _PE.meta[proj.id] = {
+          projRec,
+          trackData: (projRec.tracks || []).map(t => ({
+            ...t,
+            peaks: t.peaks ? new Float32Array(t.peaks) : null,
+            _idbKey: `${proj.id}_${t.id}`
+          }))
+        };
+      } catch(e) {}
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  if (taskId !== _PE.taskId) return;
+
+  // Load audio buffers for neighbours
+  const toBuffer = [];
+  for (let d = 1; d <= _PE_SLOTS; d++) {
+    if (projects[curIdx + d]) toBuffer.push(projects[curIdx + d].id);
+    if (!IS_MOBILE && projects[curIdx - d]) toBuffer.push(projects[curIdx - d].id);
+  }
+
+  for (const id of toBuffer) {
+    if (taskId !== _PE.taskId) return;
+    await _peLoadBuffers(id);
+  }
+
+  _peEvictDistant(curIdx);
+}
+
+// ── Fast project switch using PE data ──
 async function _loadFromCache(id, autoPlay) {
-  const cached = _preloadCache[id];
-  if (!cached) return false;
-  const { projRec, tracks: cachedTracks } = cached;
+  const meta = _PE.meta[id];
+  if (!meta) return false; // no metadata — fall back to full load
+
+  const { projRec, trackData } = meta;
+  const buffered = _PE.buffers[id]; // may or may not have audio buffers
+
   if (isPlaying) pause();
   tracks.forEach(t => destroyChain(t.id));
   tracks = []; nextId = 1; DURATION = 0; pauseOffset = 0; masterPeaks = null;
@@ -2075,29 +2181,50 @@ async function _loadFromCache(id, autoPlay) {
   sections = projRec.sections || [];
   document.getElementById('bpmInput').value = projRec.bpm || 120;
   DURATION = projRec.duration || 0;
-  for (const ct of cachedTracks) {
-    if (!ct) continue;
+
+  for (let i = 0; i < trackData.length; i++) {
+    const td = trackData[i];
+    const bData = buffered?.tracks[i];
     const track = {
-      id: nextId++, name: ct.name, hex: ct.hex, fileName: ct.fileName,
-      buffer: ct.buffer || null, waveformCache: ct.waveformCache || null,
-      muted: ct.muted, soloed: ct.soloed, vol: ct.vol, pan: ct.pan,
-      phase: ct.phase, settingsOpen: false, eq: ct.eq, sends: ct.sends
+      id: nextId++, name: td.name, hex: td.hex, fileName: td.fileName,
+      buffer: bData?.buffer || null,
+      waveformCache: td.peaks || null,
+      _idbKey: td._idbKey,
+      muted: td.muted||false, soloed: td.soloed||false, vol: td.vol||80,
+      pan: td.pan||0, phase: td.phase||false, settingsOpen: false,
+      eq: td.eq||{low:{gain:0,freq:80},mid:{gain:0,freq:1000,q:1},high:{gain:0,freq:8000}},
+      sends: td.sends||{reverb:0,delay:0}
     };
     if (track.buffer) {
       DURATION = Math.max(DURATION, track.buffer.duration);
-      _savedAudioKeys.add(`${projRec.id}_${ct.id}`);
+      _savedAudioKeys.add(td._idbKey);
     }
     tracks.push(track); renderTrackEl(track);
+    if (track.waveformCache) drawStaticWave(track.id);
     if (!track.buffer) showTrackLoad(track.id, true);
   }
-  tracks.forEach(t => { if (t.waveformCache) drawStaticWave(t.id); });
+
   _drawApproxComposite();
   updateChips(); countSt(); _rebuildMeterCache();
   drawSectionsOverlay(); saveSession(); renderProjectList();
-  delete _preloadCache[id]; // consumed
-  if (autoPlay && tracks.some(t => t.buffer)) play();
+
+  const hasBuffers = tracks.some(t => t.buffer);
+
+  if (autoPlay && hasBuffers) {
+    play();
+  } else if (autoPlay && !hasBuffers) {
+    // Buffers not ready — load in background then play
+    _loadAudioInBackground(projRec, projRec.tracks || [], true);
+    return true;
+  }
+
+  if (!hasBuffers) {
+    // Load audio in background silently
+    _loadAudioInBackground(projRec, projRec.tracks || [], false);
+  }
+
   setTimeout(() => renderCompositeMix(), 0);
-  setTimeout(() => _preloadAdjacentProjects(), 500);
+  setTimeout(() => _preloadAdjacentProjects(), 300);
   return true;
 }
 
@@ -2310,6 +2437,8 @@ async function restoreSession() {
       const rec = await dbGet('projects', session.currentProjectId);
       if (rec) await loadProject(session.currentProjectId);
     }
+    // Seed PE metadata for all projects in background
+    setTimeout(() => _peLoadAllMeta().catch(() => {}), 500);
   } catch(e) { console.warn('Session restore failed', e); }
 }
 
@@ -2777,7 +2906,7 @@ document.getElementById('btnToggleMute').onclick = () => {
   scheduleComposite();
 }; // ← closing btnToggleMute.onclick
 
-document.getElementById('bpmInput').onchange = () => drawMasterWaveform();
+document.getElementById('bpmInput').onchange = () => { drawMasterWaveform(); if(_seEditing){ const bpm=parseInt(document.getElementById('bpmInput').value)||120; const el=document.getElementById('secEdBpmDisplay'); if(el) el.textContent=bpm+' BPM · grid de beats'; _seDrawWave(); _seDrawOverlay(); } };
 
 // Fix 2: clear sections and persist
 document.getElementById('btnClearSections').onclick = () => {
