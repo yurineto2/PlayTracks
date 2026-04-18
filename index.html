@@ -1089,7 +1089,9 @@ async function addTrackFromFile(file) {
 // Desktop: converts to Int16 in async chunks (50% smaller).
 async function _saveTrackAudio(track) {
   if (!track.buffer || !db || !currentProjectId) return;
-  const key = track._idbKey || `${currentProjectId}_${track.id}`;
+  // Always build key from currentProjectId — never trust stale _idbKey from a previous session
+  const key = `${currentProjectId}_${track.id}`;
+  track._idbKey = key; // keep in sync
   try {
     const { numberOfChannels, sampleRate, length } = track.buffer;
     const channelBufs = [];
@@ -1858,6 +1860,11 @@ async function saveProject() {
 
 async function loadProject(id, autoPlay = false) {
   if (isLoadingProject) return;
+  // Fast path: if PE has metadata, skip IDB read entirely
+  if (_PE.meta[id]) {
+    const fromCache = await _loadFromCache(id, autoPlay);
+    if (fromCache) return;
+  }
   isLoadingProject = true;
 
   // ── Phase 1: Read project metadata only (KB, instant) ──
@@ -2100,6 +2107,7 @@ async function _peLoadBuffers(projId) {
 
 // ── Evict buffers far from current position ──
 function _peEvictDistant(curIdx) {
+  if (curIdx < 0) return;
   const keepSet = new Set();
   keepSet.add(projects[curIdx]?.id);
   for (let d = 1; d <= _PE_SLOTS; d++) {
@@ -2357,6 +2365,11 @@ async function importPtracks(file) {
     setTimeout(() => renderCompositeMix(), 0);
     drawSectionsOverlay();
     await autoBackup();
+    // Seed PE metadata for this newly imported project
+    if (currentProjectId && !_PE.meta[currentProjectId]) {
+      _PE.meta[currentProjectId] = { projRec: buildProjectObj(), trackData: tracks.map(t => ({ ...t, peaks: t.waveformCache, _idbKey: t._idbKey || `${currentProjectId}_${t.id}` })) };
+    }
+    setTimeout(() => _preloadAdjacentProjects().catch(()=>{}), 1000);
     setSt('Projeto "'+proj.name+'" importado com sucesso','var(--ok)');
   } catch(e) { setSt('Erro ao importar .ptracks: '+e.message,'var(--danger)'); console.error(e); }
 }
@@ -2381,7 +2394,9 @@ async function autoBackup() {
   if (!tracks.length || !db) { saveSession(); return; }
   if (!currentProjectId) currentProjectId = 'autosave_' + Date.now();
   for (const track of tracks) {
-    const key = track._idbKey || `${currentProjectId}_${track.id}`;
+    // Always build key from currentProjectId — never trust stale _idbKey from a previous session
+  const key = `${currentProjectId}_${track.id}`;
+  track._idbKey = key; // keep in sync
     if (_savedAudioKeys.has(key)) continue; // already saved this session
     if (!track.buffer) {
       // Buffer was released to RAM after save — trust _savedAudioKeys
@@ -2615,6 +2630,9 @@ async function deleteProject(id, e) {
     try { await dbDelete('audio', `${id}_${i}`); } catch(er) { continue; }
   }
   if (currentProjectId === id) currentProjectId = null;
+  // Remove from PE cache
+  delete _PE.meta[id];
+  delete _PE.buffers[id];
   saveSession();
   renderProjectList();
   document.getElementById('projCount').textContent = projects.length;
@@ -2832,6 +2850,9 @@ function newProject() {
   trackNodes = {};
   _savedAudioKeys.clear();
   _compositeMixRunning = false;
+  // Clear PE buffers to free RAM (metadata kept)
+  Object.keys(_PE.buffers).forEach(k => delete _PE.buffers[k]);
+  ++_PE.taskId; // cancel any preload tasks
   stereoSplit = false;
   document.getElementById('btnStereoSplit').classList.remove('active');
   // Reset mute state
@@ -3150,6 +3171,7 @@ function _seDrawWave() {
   }
 
   // ── BPM beat grid — drawn across full waveform height ──
+  if (DURATION <= 0) return; // nothing to draw
   const bpm = parseInt(document.getElementById('bpmInput').value) || 120;
   const secPerBeat = 60 / bpm;
   const secPerBar  = secPerBeat * 4;
